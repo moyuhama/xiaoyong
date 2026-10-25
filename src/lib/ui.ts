@@ -34,21 +34,6 @@ export function downloadText(text: string, filename: string) {
     filename,
   );
 }
-export function readSetting<T>(key: string, fallback: T): T {
-  try {
-    const value = localStorage.getItem("xiaoyong-" + key);
-    return value ? JSON.parse(value) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-export function writeSetting(key: string, value: unknown) {
-  try {
-    localStorage.setItem("xiaoyong-" + key, JSON.stringify(value));
-  } catch {
-    notify("浏览器未允许保存设置，本次仍可正常使用");
-  }
-}
 export function formatBytes(bytes: number) {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";

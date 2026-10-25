@@ -1,4 +1,4 @@
-export type Category = "text" | "image" | "dev" | "daily";
+export type Category = "text" | "image" | "dev" | "daily" | "file";
 export interface Tool {
   id: string;
   name: string;
@@ -8,15 +8,239 @@ export interface Tool {
   color: string;
   keywords: string;
   badge?: string;
+  module?:
+    | "content"
+    | "developer-extras"
+    | "everyday-extras"
+    | "config"
+    | "cron"
+    | "text-extras"
+    | "picture"
+    | "pdf"
+    | "clock";
 }
 export const categories = [
   { id: "all", name: "全部工具", icon: "LayoutGrid" },
   { id: "text", name: "文本处理", icon: "Type" },
   { id: "image", name: "图片工具", icon: "Image" },
+  { id: "file", name: "PDF 工具", icon: "Files" },
   { id: "dev", name: "开发工具", icon: "CodeXml" },
   { id: "daily", name: "生活常用", icon: "Shapes" },
 ];
 export const tools: Tool[] = [
+  {
+    id: "image-crop",
+    name: "图片裁剪与旋转",
+    description: "裁剪图片区域，旋转或镜像后导出。",
+    category: "image",
+    icon: "Crop",
+    color: "green",
+    keywords: "裁剪 图片 旋转 镜像 翻转 crop rotate",
+    module: "picture",
+    badge: "新增",
+  },
+  {
+    id: "image-watermark",
+    name: "图片文字水印",
+    description: "添加单处或平铺文字水印，调整颜色与透明度。",
+    category: "image",
+    icon: "Stamp",
+    color: "orange",
+    keywords: "图片 水印 文字 平铺 watermark",
+    module: "picture",
+    badge: "新增",
+  },
+  {
+    id: "pdf-merge",
+    name: "PDF 合并",
+    description: "调整文件顺序，将多个 PDF 合为一份。",
+    category: "file",
+    icon: "FileStack",
+    color: "purple",
+    keywords: "pdf 合并 文件 文档 merge",
+    module: "pdf",
+    badge: "新增",
+  },
+  {
+    id: "pdf-extract",
+    name: "PDF 页面提取",
+    description: "选择页码范围，提取或重排 PDF 页面。",
+    category: "file",
+    icon: "FileOutput",
+    color: "blue",
+    keywords: "pdf 拆分 提取 页面 页码 删除 重排 split",
+    module: "pdf",
+    badge: "新增",
+  },
+  {
+    id: "yaml-json",
+    name: "YAML / JSON 互转",
+    description: "转换配置文件格式，检查缩进与数据类型。",
+    category: "dev",
+    icon: "FileCode",
+    color: "green",
+    keywords: "yaml yml json 转换 配置 校验",
+    module: "config",
+    badge: "新增",
+  },
+  {
+    id: "jwt",
+    name: "JWT 解析",
+    description: "查看令牌的 Header、Payload 和时间字段。",
+    category: "dev",
+    icon: "KeyRound",
+    color: "purple",
+    keywords: "jwt token 令牌 解析 header payload",
+    module: "config",
+    badge: "新增",
+  },
+  {
+    id: "cron",
+    name: "Cron 表达式解析",
+    description: "读懂执行规则，查看接下来 5 次执行时间。",
+    category: "dev",
+    icon: "CalendarDays",
+    color: "blue",
+    keywords: "cron crontab 定时 表达式 调度 执行 时间",
+    module: "cron",
+    badge: "新增",
+  },
+  {
+    id: "html-entities",
+    name: "HTML 转义与还原",
+    description: "转换 HTML 特殊字符和字符实体。",
+    category: "dev",
+    icon: "CodeXml",
+    color: "orange",
+    keywords: "html 转义 还原 实体 escape entities",
+    module: "config",
+    badge: "新增",
+  },
+  {
+    id: "text-replace",
+    name: "文本查找替换",
+    description: "按原文查找关键词，批量替换或删除。",
+    category: "text",
+    icon: "Replace",
+    color: "blue",
+    keywords: "文本 查找 替换 批量 删除 replace",
+    module: "text-extras",
+    badge: "新增",
+  },
+  {
+    id: "list-compare",
+    name: "名单与列表对比",
+    description: "找出两份名单的交集、差集与合并结果。",
+    category: "text",
+    icon: "ListChecks",
+    color: "green",
+    keywords: "名单 列表 对比 交集 差集 并集 集合 compare",
+    module: "text-extras",
+    badge: "新增",
+  },
+  {
+    id: "world-clock",
+    name: "世界时钟",
+    description: "同时查看多个城市的时间，也可指定对比时刻。",
+    category: "daily",
+    icon: "Globe",
+    color: "purple",
+    keywords: "世界 时钟 时间 时区 北京 纽约 伦敦 东京 timezone",
+    module: "clock",
+    badge: "新增",
+  },
+  {
+    id: "timer",
+    name: "倒计时与秒表",
+    description: "设置倒计时，或用秒表记录经过的时间。",
+    category: "daily",
+    icon: "Timer",
+    color: "orange",
+    keywords: "倒计时 秒表 计时 定时 专注 timer stopwatch",
+    module: "clock",
+    badge: "新增",
+  },
+  {
+    id: "markdown",
+    name: "Markdown 预览",
+    description: "边写边预览，导出 Markdown 或 HTML。",
+    category: "text",
+    icon: "FileText",
+    color: "blue",
+    keywords: "markdown md 文档 编辑 预览 html",
+    module: "content",
+  },
+  {
+    id: "csv-json",
+    name: "CSV / JSON 互转",
+    description: "表格文本与 JSON 数组之间相互转换。",
+    category: "dev",
+    icon: "Table2",
+    color: "green",
+    keywords: "csv json tsv 表格 转换 逗号 分隔",
+    module: "content",
+  },
+  {
+    id: "hash",
+    name: "文本哈希计算",
+    description: "计算文本的 SHA-256、SHA-384 与 SHA-512。",
+    category: "dev",
+    icon: "Hash",
+    color: "purple",
+    keywords: "hash 哈希 散列 sha sha256 sha384 sha512 摘要",
+    module: "developer-extras",
+  },
+  {
+    id: "radix",
+    name: "进制转换",
+    description: "在二、八、十、十六等进制间转换整数。",
+    category: "dev",
+    icon: "Binary",
+    color: "blue",
+    keywords: "进制 转换 二进制 八进制 十进制 十六进制 hex binary bigint",
+    module: "developer-extras",
+  },
+  {
+    id: "url-parser",
+    name: "URL 解析",
+    description: "拆解网址结构，查看和解码查询参数。",
+    category: "dev",
+    icon: "Link",
+    color: "orange",
+    keywords: "url 网址 链接 解析 参数 query 域名",
+    module: "developer-extras",
+  },
+  {
+    id: "unit-converter",
+    name: "单位换算",
+    description: "换算长度、重量、温度、面积等常用单位。",
+    category: "daily",
+    icon: "Ruler",
+    color: "green",
+    keywords:
+      "单位 换算 长度 重量 质量 面积 体积 温度 摄氏 华氏 数据 容量 英寸 厘米",
+    module: "everyday-extras",
+  },
+  {
+    id: "percentage",
+    name: "百分比计算",
+    description: "计算百分数、占比和数值变化幅度。",
+    category: "daily",
+    icon: "Percent",
+    color: "orange",
+    keywords: "百分比 百分数 占比 增长 变化 计算 折扣",
+    module: "everyday-extras",
+  },
+  {
+    id: "random-draw",
+    name: "随机抽签",
+    description: "输入候选名单，随机抽取不重复的结果。",
+    category: "daily",
+    icon: "Shuffle",
+    color: "purple",
+    keywords: "抽签 随机 抽取 抽奖 名单 选择 决定",
+    module: "everyday-extras",
+  },
   {
     id: "json",
     name: "JSON 格式化",
@@ -131,11 +355,23 @@ export const tools: Tool[] = [
 ];
 export function searchTools(query: string, source = tools) {
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  return source.filter((tool) =>
-    words.every((word) =>
-      (tool.name + " " + tool.description + " " + tool.keywords)
-        .toLowerCase()
-        .includes(word),
-    ),
-  );
+  if (!words.length) return source;
+  const score = (tool: Tool) =>
+    words.reduce(
+      (sum, word) =>
+        sum +
+        (tool.id === word ? 40 : 0) +
+        (tool.name.toLowerCase().includes(word) ? 10 : 0) +
+        (tool.description.toLowerCase().includes(word) ? 2 : 0),
+      0,
+    );
+  return source
+    .filter((tool) =>
+      words.every((word) =>
+        (tool.name + " " + tool.description + " " + tool.keywords)
+          .toLowerCase()
+          .includes(word),
+      ),
+    )
+    .sort((a, b) => score(b) - score(a));
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import QRCode from "qrcode";
 import Icon from "./Icon.vue";
 import { copy, downloadBlob, notify } from "../lib/ui";
@@ -42,6 +42,33 @@ const timestamp = ref(""),
   unit = ref("seconds"),
   dateInput = ref(""),
   timezone = ref("local");
+const currentMilliseconds = ref(Date.now());
+const currentSeconds = computed(() =>
+  Math.floor(currentMilliseconds.value / 1000),
+);
+const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const currentDateInput = computed(() => {
+  const now = new Date(currentMilliseconds.value);
+  const offset = timezone.value === "utc" ? 0 : now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 19);
+});
+const currentDateTime = computed(() =>
+  currentDateInput.value.replace("T", " "),
+);
+let clockTimer: ReturnType<typeof setInterval> | undefined;
+function refreshClock() {
+  currentMilliseconds.value = Date.now();
+}
+onMounted(() => {
+  if (props.toolId !== "datetime") return;
+  refreshClock();
+  clockTimer = setInterval(refreshClock, 1000);
+  document.addEventListener("visibilitychange", refreshClock);
+});
+onUnmounted(() => {
+  clearInterval(clockTimer);
+  document.removeEventListener("visibilitychange", refreshClock);
+});
 const dateOutput = ref(""),
   timestampOutput = ref("");
 const dateStart = ref(""),
@@ -108,12 +135,11 @@ function downloadQr(svg = false) {
   }
 }
 function useNow() {
-  const now = new Date();
+  refreshClock();
   timestamp.value = String(
-    unit.value === "seconds" ? Math.floor(now.getTime() / 1000) : now.getTime(),
+    unit.value === "seconds" ? currentSeconds.value : currentMilliseconds.value,
   );
-  const offset = timezone.value === "utc" ? 0 : now.getTimezoneOffset() * 60000;
-  dateInput.value = new Date(now.getTime() - offset).toISOString().slice(0, 19);
+  dateInput.value = currentDateInput.value;
   error.value = "";
 }
 function convertTimestamp() {
@@ -287,6 +313,57 @@ watch([timestamp, dateInput, timezone, unit], () => {
       </div>
     </template>
     <template v-else-if="toolId === 'datetime'">
+      <section class="current-time-panel" aria-label="当前时间">
+        <div class="current-time-heading">
+          <h2><Icon name="CalendarClock" :size="17" />当前时间</h2>
+          <span
+            >{{ timezone === "utc" ? "UTC" : deviceTimezone }} · 每秒更新</span
+          >
+        </div>
+        <div class="current-time-values">
+          <div>
+            <span>日期和时间</span>
+            <div class="current-time-value">
+              <time :datetime="new Date(currentMilliseconds).toISOString()">{{
+                currentDateTime
+              }}</time>
+              <button
+                class="icon-button"
+                aria-label="复制当前日期时间"
+                @click="copy(currentDateTime)"
+              >
+                <Icon name="Copy" :size="16" />
+              </button>
+            </div>
+          </div>
+          <div>
+            <span>时间戳 · 秒</span>
+            <div class="current-time-value">
+              <code>{{ currentSeconds }}</code>
+              <button
+                class="icon-button"
+                aria-label="复制当前秒级时间戳"
+                @click="copy(String(currentSeconds))"
+              >
+                <Icon name="Copy" :size="16" />
+              </button>
+            </div>
+          </div>
+          <div>
+            <span>时间戳 · 毫秒</span>
+            <div class="current-time-value">
+              <code>{{ currentMilliseconds }}</code>
+              <button
+                class="icon-button"
+                aria-label="复制当前毫秒级时间戳"
+                @click="copy(String(currentMilliseconds))"
+              >
+                <Icon name="Copy" :size="16" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
       <div class="tool-toolbar">
         <div class="segmented">
           <button

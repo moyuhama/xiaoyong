@@ -63,7 +63,7 @@ defineEmits<{ "update:modelValue": [value: string] }>();
           ? Array.from(modelValue).length.toLocaleString() + " 字符"
           : "等待输入"
       }}</span
-      ><span>{{ readonly ? "结果仅在本地生成" : "支持直接粘贴" }}</span>
+      ><span v-if="!readonly">支持直接粘贴</span>
     </div>
   </section>
 </template>

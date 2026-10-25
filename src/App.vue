@@ -10,7 +10,7 @@ import {
 } from "vue";
 import Icon from "./components/Icon.vue";
 import { categories, tools, searchTools } from "./lib/tools";
-import { readSetting, writeSetting, toast, notify } from "./lib/ui";
+import { toast } from "./lib/ui";
 
 const TextTools = defineAsyncComponent(
   () => import("./components/TextTools.vue"),
@@ -24,6 +24,23 @@ const ImageTools = defineAsyncComponent(
 const DailyTools = defineAsyncComponent(
   () => import("./components/DailyTools.vue"),
 );
+const extraModules = {
+  config: defineAsyncComponent(() => import("./components/ConfigTools.vue")),
+  cron: defineAsyncComponent(() => import("./components/CronTool.vue")),
+  "text-extras": defineAsyncComponent(
+    () => import("./components/TextExtras.vue"),
+  ),
+  picture: defineAsyncComponent(() => import("./components/PictureTools.vue")),
+  pdf: defineAsyncComponent(() => import("./components/PdfTools.vue")),
+  clock: defineAsyncComponent(() => import("./components/ClockTools.vue")),
+  content: defineAsyncComponent(() => import("./components/ContentTools.vue")),
+  "developer-extras": defineAsyncComponent(
+    () => import("./components/DeveloperExtras.vue"),
+  ),
+  "everyday-extras": defineAsyncComponent(
+    () => import("./components/EverydayExtras.vue"),
+  ),
+};
 const route = ref(location.hash.slice(1) || "/");
 const query = ref("");
 const searchInput = ref<HTMLInputElement>();
@@ -38,18 +55,6 @@ function focusMain() {
   document.getElementById("main-content")?.focus();
 }
 const about = ref<HTMLDialogElement>();
-const favoriteData = readSetting<unknown>("favorites", []);
-const recentData = readSetting<unknown>("recent", []);
-const favorites = ref<string[]>(
-  Array.isArray(favoriteData)
-    ? favoriteData.filter((id) => tools.some((tool) => tool.id === id))
-    : [],
-);
-const recent = ref<string[]>(
-  Array.isArray(recentData)
-    ? recentData.filter((id) => tools.some((tool) => tool.id === id))
-    : [],
-);
 const theme = ref(document.documentElement.dataset.theme || "light");
 const currentTool = computed(() =>
   route.value.startsWith("/tool/")
@@ -57,39 +62,26 @@ const currentTool = computed(() =>
     : undefined,
 );
 const view = computed(() =>
-  route.value === "/favorites"
-    ? "favorites"
-    : route.value === "/recent"
-      ? "recent"
-      : route.value.startsWith("/category/")
-        ? route.value.split("/")[2]
-        : "all",
+  route.value.startsWith("/category/") ? route.value.split("/")[2] : "all",
 );
 const isToolRoute = computed(() => route.value.startsWith("/tool/"));
 const categoryName = computed(
   () =>
     categories.find((c) => c.id === currentTool.value?.category)?.name || "",
 );
-const title = computed(() =>
-  view.value === "favorites"
-    ? "我的收藏"
-    : view.value === "recent"
-      ? "最近使用"
-      : categories.find((c) => c.id === view.value)?.name || "全部工具",
+const title = computed(
+  () => categories.find((c) => c.id === view.value)?.name || "全部工具",
 );
 const filtered = computed(() => {
-  let source = tools;
-  if (view.value === "favorites")
-    source = tools.filter((t) => favorites.value.includes(t.id));
-  else if (view.value === "recent")
-    source = recent.value
-      .map((id) => tools.find((t) => t.id === id)!)
-      .filter(Boolean);
-  else if (view.value !== "all")
-    source = tools.filter((t) => t.category === view.value);
+  const source =
+    view.value === "all"
+      ? tools
+      : tools.filter((tool) => tool.category === view.value);
   return searchTools(query.value, source);
 });
 const toolComponent = computed(() => {
+  const module = currentTool.value?.module;
+  if (module) return extraModules[module];
   const id = currentTool.value?.id;
   if (id?.startsWith("image-")) return ImageTools;
   if (id?.startsWith("text-")) return TextTools;
@@ -106,12 +98,6 @@ function navigate(path: string) {
 function handleRoute() {
   route.value = location.hash.slice(1) || "/";
   window.scrollTo({ top: 0 });
-}
-function toggleFavorite(id: string) {
-  favorites.value = favorites.value.includes(id)
-    ? favorites.value.filter((item) => item !== id)
-    : [...favorites.value, id];
-  writeSetting("favorites", favorites.value);
 }
 function toggleTheme() {
   theme.value = theme.value === "light" ? "dark" : "light";
@@ -150,13 +136,6 @@ watch(
     document.title = tool
       ? tool.name + " · 小用工具箱"
       : "小用 · 让每件小事更简单";
-    if (tool) {
-      recent.value = [
-        tool.id,
-        ...recent.value.filter((id) => id !== tool.id),
-      ].slice(0, 12);
-      writeSetting("recent", recent.value);
-    }
   },
   { immediate: true },
 );
@@ -217,32 +196,7 @@ onUnmounted(() => {
         }}</small>
       </a>
     </nav>
-    <div class="nav-section-label personal-label">
-      我的空间 <span>PERSONAL</span>
-    </div>
-    <nav aria-label="我的空间" class="main-nav">
-      <a
-        href="#/favorites"
-        :class="{ active: view === 'favorites' }"
-        @click.prevent="navigate('/favorites')"
-        ><Icon name="Star" :size="19" /><span>我的收藏</span
-        ><small v-if="favorites.length">{{ favorites.length }}</small></a
-      >
-      <a
-        href="#/recent"
-        :class="{ active: view === 'recent' }"
-        @click.prevent="navigate('/recent')"
-        ><Icon name="Clock3" :size="19" /><span>最近使用</span></a
-      >
-    </nav>
     <div class="sidebar-bottom">
-      <div class="privacy-note">
-        <span class="privacy-symbol"
-          ><Icon name="ShieldCheck" :size="21" /></span
-        ><strong>你的数据，只属于你</strong>
-        <p>工具在浏览器本地运行<br />输入内容无需上传服务器</p>
-        <span class="tiny-dots">本地处理 <i></i> 即开即用</span>
-      </div>
       <button class="sidebar-about" @click="about?.showModal()">
         <Icon name="CircleHelp" :size="17" />关于小用<span>v1.0</span>
       </button>
@@ -271,9 +225,7 @@ onUnmounted(() => {
         >
       </div>
       <div class="top-actions">
-        <span class="local-badge"><i></i> 本地运行 · 安心使用</span
-        ><span class="top-divider"></span
-        ><button
+        <button
           class="icon-button"
           aria-label="搜索工具（Ctrl 或 Command + K）"
           @click="focusSearch"
@@ -312,13 +264,6 @@ onUnmounted(() => {
                 class="hero-break"
               />无需安装，即开即用，把时间留给更重要的事。
             </p>
-            <div class="hero-features">
-              <span
-                ><Icon name="Check" :size="14" />
-                {{ tools.length }} 款精选工具</span
-              ><span><Icon name="LockKeyhole" :size="13" /> 隐私优先</span
-              ><span><Icon name="Heart" :size="13" /> 免费使用</span>
-            </div>
           </div>
           <div class="hero-art" aria-hidden="true">
             <div class="art-orbit orbit-one"></div>
@@ -344,15 +289,7 @@ onUnmounted(() => {
         <section v-else class="collection-heading">
           <span class="eyebrow">你的效率工作台</span>
           <h1>{{ title }}</h1>
-          <p>
-            {{
-              view === "favorites"
-                ? "把顺手的工具收好，下次更快找到。"
-                : view === "recent"
-                  ? "接着上次的事情，继续高效一点。"
-                  : "少一点繁琐，多一点得心应手。"
-            }}
-          </p>
+          <p>少一点繁琐，多一点得心应手。</p>
         </section>
         <div class="search-box">
           <Icon name="Search" :size="21" /><input
@@ -396,17 +333,7 @@ onUnmounted(() => {
           </h2>
           <span v-if="view === 'all' && !query" class="section-hint"
             ><Icon name="Sparkles" :size="14" /> 持续打磨中</span
-          ><button
-            v-if="view === 'recent' && recent.length"
-            class="text-button"
-            @click="
-              recent = [];
-              writeSetting('recent', []);
-              notify('已清空最近使用');
-            "
           >
-            清空记录
-          </button>
         </div>
         <div v-if="filtered.length" class="tool-grid">
           <article
@@ -435,49 +362,12 @@ onUnmounted(() => {
                 }}</span
                 ><Icon name="ArrowUpRight" :size="17" /></div
             ></a>
-            <button
-              class="favorite-button"
-              :class="{ saved: favorites.includes(tool.id) }"
-              :aria-label="
-                (favorites.includes(tool.id) ? '取消收藏' : '收藏') + tool.name
-              "
-              :aria-pressed="favorites.includes(tool.id)"
-              @click="toggleFavorite(tool.id)"
-            >
-              <Icon name="Star" :size="17" />
-            </button>
           </article>
         </div>
         <div v-else class="empty-state">
-          <span class="empty-icon"
-            ><Icon
-              :name="
-                view === 'favorites'
-                  ? 'Star'
-                  : view === 'recent'
-                    ? 'Clock3'
-                    : 'Search'
-              "
-              :size="34"
-          /></span>
-          <h3>
-            {{
-              query
-                ? "暂时没有找到这个工具"
-                : view === "favorites"
-                  ? "把喜欢的工具留在这里"
-                  : "还没有使用记录"
-            }}
-          </h3>
-          <p>
-            {{
-              query
-                ? "试试更短的关键词，如「图片」「文本」或「JSON」。"
-                : view === "favorites"
-                  ? "点击工具卡片右上角的星标，就能随时找到它。"
-                  : "打开任意工具后，它就会出现在这里。"
-            }}
-          </p>
+          <span class="empty-icon"><Icon name="Search" :size="34" /></span>
+          <h3>暂时没有找到这个工具</h3>
+          <p>试试更短的关键词，如「图片」「文本」或「JSON」。</p>
           <button class="button secondary" @click="navigate('/')">
             浏览全部工具<Icon name="ArrowRight" :size="16" />
           </button>
@@ -500,15 +390,6 @@ onUnmounted(() => {
             <h1>{{ currentTool.name }}</h1>
             <p>{{ currentTool.description }}</p>
           </div>
-          <button
-            class="button secondary tool-save"
-            :class="{ 'is-saved': favorites.includes(currentTool.id) }"
-            @click="toggleFavorite(currentTool.id)"
-          >
-            <Icon name="Star" :size="17" />{{
-              favorites.includes(currentTool.id) ? "已收藏" : "收藏工具"
-            }}
-          </button>
         </div>
         <Suspense
           ><component
@@ -521,11 +402,7 @@ onUnmounted(() => {
             </div></template
           ></Suspense
         >
-        <div class="tool-privacy">
-          <Icon name="ShieldCheck" :size="16" /><span
-            >所有处理均在你的浏览器内完成，输入内容不会上传。离开工具页面后，输入内容将被清空。</span
-          >
-        </div>
+        <p class="tool-note">离开工具页面后，输入内容将被清空。</p>
         <section class="related-section">
           <h2>也许你还用得上</h2>
           <div class="related-tools">
@@ -559,10 +436,7 @@ onUnmounted(() => {
       <span
         >小用<span class="footer-dot">.</span> <i>用心做好每一个小工具</i></span
       >
-      <div>
-        <span><i class="status-dot"></i>全部工具本地运行</span
-        ><button @click="about?.showModal()">关于与隐私</button>
-      </div>
+      <button @click="about?.showModal()">关于与隐私</button>
     </footer>
   </div>
   <Transition name="toast"
@@ -590,25 +464,13 @@ onUnmounted(() => {
       <div class="about-detail">
         <h3><Icon name="ShieldCheck" :size="18" /> 关于你的数据</h3>
         <p>
-          文本、图片及生成结果都在浏览器内处理，不会由工具发送至服务器。收藏、最近使用的工具名称和主题偏好保存在当前浏览器，不跨设备同步。
+          文本、图片及生成结果都在浏览器内处理，不会由工具发送至服务器。浏览器仅保存主题偏好。
         </p>
         <p>
           网站加载需要获取静态资源，托管服务商可能记录常规访问日志。本站不添加广告或第三方统计脚本。
         </p>
       </div>
-      <button
-        class="button secondary"
-        @click="
-          favorites = [];
-          recent = [];
-          writeSetting('favorites', []);
-          writeSetting('recent', []);
-          notify('已清空收藏与最近使用');
-          about?.close();
-        "
-      >
-        <Icon name="Trash2" :size="16" />清空收藏与使用记录</button
-      ><small>小用工具箱 · v1.0.0</small>
+      <small>小用工具箱 · v1.0.0</small>
     </div>
   </dialog>
 </template>
