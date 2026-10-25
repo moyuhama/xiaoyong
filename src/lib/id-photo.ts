@@ -43,7 +43,7 @@ export const photoSizes: {
   { id: "50x70", group: "其他常用规格", mmWidth: 50, mmHeight: 70 },
   { id: "51x51", group: "其他常用规格", mmWidth: 51, mmHeight: 51 },
 ];
-export const photoZoom = { min: 50, max: 300, step: 10 };
+export const photoZoom = { min: 50, max: 500, step: 10 };
 export function photoDimensions(id: string, width = 295, height = 413) {
   const preset = photoSizes.find((size) => size.id === id);
   const result = preset

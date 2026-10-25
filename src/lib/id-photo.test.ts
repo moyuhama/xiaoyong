@@ -28,7 +28,7 @@ describe("证件照构图和导出参数", () => {
     ]) {
       for (const x of [-1, 0, 1])
         for (const y of [-1, 0, 1]) {
-          const p = photoPlacement(iw!, ih!, 295, 413, 1.7, x, y);
+          const p = photoPlacement(iw!, ih!, 295, 413, 5, x, y);
           expect(p.x).toBeLessThanOrEqual(0);
           expect(p.y).toBeLessThanOrEqual(0);
           expect(p.x + p.width).toBeGreaterThanOrEqual(295 - 1e-8);
@@ -47,7 +47,7 @@ describe("证件照构图和导出参数", () => {
     const end = photoPlacement(600, 800, 300, 400, 0.5, 1, 1);
     expect(end.x + end.width).toBe(300);
     expect(end.y + end.height).toBe(400);
-    for (const invalid of [0.49, 3.01, NaN])
+    for (const invalid of [0.49, 5.01, NaN])
       expect(() => photoPlacement(600, 800, 300, 400, invalid, 0, 0)).toThrow();
   });
   it("横图缩小时能同时裁去左右并保留上下底色", () => {
