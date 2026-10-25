@@ -18,7 +18,11 @@ export interface Tool {
     | "picture"
     | "id-photo"
     | "pdf"
-    | "clock";
+    | "clock"
+    | "image-batch"
+    | "image-utility"
+    | "text-workshop"
+    | "number-tools";
 }
 export const categories = [
   { id: "all", name: "全部工具", icon: "LayoutGrid" },
@@ -29,6 +33,116 @@ export const categories = [
   { id: "daily", name: "生活常用", icon: "Shapes" },
 ];
 export const tools: Tool[] = [
+  {
+    id: "image-stitch",
+    name: "图片拼接",
+    description: "将多张图片拼成长图或网格，调整顺序与间距。",
+    category: "image",
+    icon: "LayoutGrid",
+    color: "green",
+    keywords: "图片 拼图 拼接 长图 合并 横向 纵向 collage",
+    module: "image-batch",
+    badge: "新增",
+  },
+  {
+    id: "image-color-picker",
+    name: "图片取色",
+    description: "点击图片提取颜色，复制 HEX 与 RGBA 色值。",
+    category: "image",
+    icon: "Palette",
+    color: "purple",
+    keywords: "图片 取色 吸管 色值 透明 hex rgb rgba color picker",
+    module: "image-utility",
+    badge: "新增",
+  },
+  {
+    id: "ico-maker",
+    name: "ICO 图标制作",
+    description: "将图片转换为包含多种尺寸的网站 ICO 图标。",
+    category: "image",
+    icon: "ImageDown",
+    color: "blue",
+    keywords: "ico favicon 图标 网站 图像 转换",
+    module: "image-utility",
+    badge: "新增",
+  },
+  {
+    id: "photo-print",
+    name: "证件照打印排版",
+    description: "将证件照排列到 6 寸或 A4 纸张，导出打印文件。",
+    category: "image",
+    icon: "ContactRound",
+    color: "orange",
+    keywords: "证件照 打印 排版 照片 一寸 二寸 相纸 6寸 A4 print",
+    module: "image-batch",
+    badge: "新增",
+  },
+  {
+    id: "images-pdf",
+    name: "图片转 PDF",
+    description: "按顺序将图片合为 PDF，每张图片独占一页。",
+    category: "file",
+    icon: "FileImage",
+    color: "green",
+    keywords: "图片 pdf 转换 jpg png 合并 image",
+    module: "image-batch",
+    badge: "新增",
+  },
+  {
+    id: "pdf-number",
+    name: "PDF 添加页码",
+    description: "指定编号起点和页脚位置，支持跳过封面。",
+    category: "file",
+    icon: "FileText",
+    color: "purple",
+    keywords: "pdf 页码 编号 页脚 封面 number",
+    module: "pdf",
+    badge: "新增",
+  },
+  {
+    id: "sql-format",
+    name: "SQL 格式化",
+    description: "整理 SQL 排版，支持常用方言与关键字大小写。",
+    category: "dev",
+    icon: "CodeXml",
+    color: "blue",
+    keywords: "sql mysql postgresql sqlite sqlserver 数据库 格式化 美化",
+    module: "text-workshop",
+    badge: "新增",
+  },
+  {
+    id: "pinyin",
+    name: "汉字转拼音",
+    description: "转换声调拼音、数字声调或首字母，保留换行。",
+    category: "text",
+    icon: "Type",
+    color: "orange",
+    keywords: "汉字 中文 拼音 首字母 姓名 声调 pinyin",
+    module: "text-workshop",
+    badge: "新增",
+  },
+  {
+    id: "money-uppercase",
+    name: "人民币大写",
+    description: "将金额转成中文大写，支持分位、负数与千位逗号。",
+    category: "daily",
+    icon: "Type",
+    color: "green",
+    keywords: "人民币 金额 大写 财务 数字 转换 rmb money",
+    module: "number-tools",
+    badge: "新增",
+  },
+  {
+    id: "random-number",
+    name: "随机数生成",
+    description: "指定整数范围批量生成，可不重复、排序或复制。",
+    category: "daily",
+    icon: "Shuffle",
+    color: "purple",
+    keywords: "随机数 整数 数字 随机 抽取 random number",
+    module: "number-tools",
+    badge: "新增",
+  },
   {
     id: "id-photo",
     name: "证件照制作",

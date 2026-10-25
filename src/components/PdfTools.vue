@@ -6,7 +6,11 @@ import type { PdfInput, PdfRequest, PdfResult } from "../lib/pdf-tools";
 import { downloadBlob, formatBytes } from "../lib/ui";
 const props = defineProps<{ toolId: string }>();
 const merge = computed(() => props.toolId === "pdf-merge"),
+  numbering = computed(() => props.toolId === "pdf-number"),
   picker = ref<HTMLInputElement>();
+const startNumber = ref(1),
+  numberSize = ref(11),
+  numberPosition = ref<"left" | "center" | "right">("center");
 const files = shallowRef<
   (PdfInput & { size: number; pages: number; id: number })[]
 >([]);
@@ -39,7 +43,7 @@ async function addFiles(chosen: FileList | File[] | null) {
   invalidate();
   const incoming = Array.from(chosen);
   if (!merge.value && incoming.length !== 1) {
-    validation.value = "页面提取每次请选择一个 PDF";
+    validation.value = "每次请选择一个 PDF";
     return;
   }
   if (
@@ -111,9 +115,16 @@ async function generate() {
   if (!files.value.length) return;
   invalidate();
   const result = await run({
-    operation: merge.value ? "merge" : "extract",
+    operation: merge.value ? "merge" : numbering.value ? "number" : "extract",
     files: files.value.map(({ name, bytes }) => ({ name, bytes })),
     range: range.value,
+    numbering: numbering.value
+      ? {
+          start: startNumber.value,
+          size: numberSize.value,
+          position: numberPosition.value,
+        }
+      : undefined,
   });
   if (result?.bytes) {
     output.value = new Blob([result.bytes.slice().buffer as ArrayBuffer], {
@@ -122,7 +133,7 @@ async function generate() {
     outputPages.value = result.pages!;
   }
 }
-watch(range, invalidate);
+watch([range, startNumber, numberSize, numberPosition], invalidate);
 onUnmounted(() => {
   version++;
 });
@@ -173,7 +184,9 @@ onUnmounted(() => {
             ? "正在读取文件…"
             : merge
               ? "选择要合并的 PDF"
-              : "选择要提取的 PDF"
+              : numbering
+                ? "选择要添加页码的 PDF"
+                : "选择要提取的 PDF"
         }}
       </h2>
       <p>点击选择，或拖拽文件到这里</p>
@@ -215,20 +228,58 @@ onUnmounted(() => {
         </li>
       </ol>
       <label v-if="!merge" class="field-label"
-        >要提取的页码<input
+        >{{ numbering ? "添加页码的页面" : "要提取的页码"
+        }}<input
           v-model="range"
           :disabled="working"
           placeholder="例如 1-3, 5, 8"
       /></label>
-      <p v-if="!merge" class="muted range-hint">
+      <p v-if="!merge && !numbering" class="muted range-hint">
         按填写顺序排列；例如 3, 1-2 会把第 3 页放在最前。重复页码仅保留一次。
       </p>
+      <template v-if="numbering"
+        ><p class="muted range-hint">
+          保留全部页面和原有顺序，只在选中页面连续编号。例如填写
+          2-5，可跳过封面。
+        </p>
+        <div class="numbering-settings">
+          <label class="field-label"
+            >起始编号<input
+              v-model.number="startNumber"
+              type="number"
+              min="1"
+              max="999999"
+              :disabled="working" /></label
+          ><label class="field-label"
+            >字号（pt）<input
+              v-model.number="numberSize"
+              type="number"
+              min="8"
+              max="32"
+              :disabled="working" /></label
+          ><label class="field-label"
+            >页脚位置<select v-model="numberPosition" :disabled="working">
+              <option value="left">左侧</option>
+              <option value="center">居中</option>
+              <option value="right">右侧</option>
+            </select></label
+          >
+        </div></template
+      >
       <button class="button primary" :disabled="working" @click="generate">
         <Icon
           :name="working ? 'LoaderCircle' : 'FileOutput'"
           :size="17"
           :class="{ spin: working }"
-        />{{ working ? "正在处理…" : merge ? "合并 PDF" : "提取并生成 PDF" }}
+        />{{
+          working
+            ? "正在处理…"
+            : merge
+              ? "合并 PDF"
+              : numbering
+                ? "添加页码并生成 PDF"
+                : "提取并生成 PDF"
+        }}
       </button>
       <div v-if="output" class="file-output" role="status">
         <div>
@@ -242,7 +293,8 @@ onUnmounted(() => {
               output,
               merge
                 ? 'xiaoyong-merged.pdf'
-                : files[0]!.name.replace(/\.pdf$/i, '') + '-pages.pdf',
+                : files[0]!.name.replace(/\.pdf$/i, '') +
+                    (numbering ? '-numbered.pdf' : '-pages.pdf'),
             )
           "
         >
@@ -254,10 +306,11 @@ onUnmounted(() => {
       {{ validation || error }}
     </p>
     <div class="workspace-footnote">
-      <Icon
-        name="Info"
-        :size="15"
-      />导出保留页面内容；书签、附件和文档级设置不保留。
+      <Icon name="Info" :size="15" /><span
+        >{{
+          numbering ? "页码添加到页脚，可能覆盖原有内容，请核对导出文件。" : ""
+        }}导出保留页面内容；书签、附件和文档级设置不保留。</span
+      >
     </div>
   </div>
 </template>

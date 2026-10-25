@@ -1,6 +1,6 @@
 # 小用 · 让每件小事更简单
 
-面向日常与开发工作的中文工具箱。33 个工具全部在浏览器本地处理，无需账户、数据库或服务端 API。
+面向日常与开发工作的中文工具箱。43 个工具全部在浏览器本地处理，无需账户、数据库或服务端 API。
 
 [在线使用](https://moyuhama.github.io/xiaoyong/) · [GitHub 仓库](https://github.com/moyuhama/xiaoyong)
 
@@ -31,10 +31,20 @@
 - YAML / JSON 互转、JWT 解析、Cron 表达式解析、HTML 字符实体转义与还原
 - 文本查找替换、名单与列表的交集 / 差集 / 并集
 - 世界时钟与指定时刻对比、倒计时与秒表
+- 图片拼接：横向 / 纵向长图、网格拼图、文件排序、间距和背景色
+- 图片取色：点击或按原图坐标读取 HEX / RGBA，包含透明度
+- ICO 图标制作：16 / 32 / 48 / 64 / 128 / 256 px 多尺寸打包，完整显示或居中裁剪
+- 证件照打印排版：12 种照片规格 / 自定义毫米、6 寸相纸 / A4、份数 / 边距 / 间距，导出 300 DPI PNG / JPG 或物理尺寸 PDF
+- 图片转 PDF：排序后每图一页，A4 纵向 / 横向与页边距
+- PDF 添加页码：指定页面连续编号，跳过封面、起始编号、字号和页脚位置
+- SQL 格式化：标准 SQL / MySQL / PostgreSQL / SQLite / SQL Server 方言、关键字大小写与缩进
+- 汉字转拼音：声调 / 数字声调 / 无声调 / 首字母，姓氏模式与大小写
+- 人民币大写：保留分位与大整数，支持负数及规范千位逗号
+- 随机数生成：整数范围、批量不重复抽取、排序与分隔方式
 
 支持分类搜索、深色模式、手机布局与键盘搜索（Ctrl / Command + K）。
 
-本轮调研参考 [IT-Tools](https://github.com/CorentinTh/it-tools) 的开发辅助工具分类，以及 [OmniTools](https://github.com/iib0011/omni-tools) 的图片、文档、文本功能覆盖。优先补齐日常图片编辑、PDF 整理和配置调试，保留浏览器静态部署方式；没有复制这两个项目的实现。
+前期调研参考 [IT-Tools](https://github.com/CorentinTh/it-tools) 与 [OmniTools](https://github.com/iib0011/omni-tools) 的工具分类。本轮参考 [懒人工具](https://www.lanren-tools.com/) 的图片与 PDF 目录，以及 Tool.lu 的[图片拼图](https://tool.lu/collage/)、[证件照排版](https://tool.lu/imageprint/)、[图片转 PDF](https://tool.lu/image2pdf/)、[SQL](https://tool.lu/sql/)、[ICO](https://tool.lu/favicon/)和[拼音](https://tool.lu/py5bconvert/)工具；通过 [67 工具的数字类页面公开索引](https://www.67tool.com/number/hex-to-binary)核对随机数、金额大写需求（其首页限制自动访问）。参考功能方向，按小用现有界面独立实现，不复制这些网站的页面、品牌或源码。
 
 ## GitHub Pages 部署
 
@@ -75,6 +85,11 @@
 - 证件照输出每边 100–2000 px，源图处理时最长边缩小到 2048 px。采用 MediaPipe Selfie Segmentation 做人像换底，适合单人正面近照；复杂背景、发丝或衣服边缘可能需要调整，不进行证件合规检测。照片在浏览器内处理，模型在首次换底时加载；失败后可保留原背景继续裁剪。
 - 证件照预设均按宽 × 高（mm）以 300 DPI 换算像素：22×32、25×35、33×48、35×45、35×49、35×53、26×32、30×40、35×50、40×50、50×70、51×51。寸照名称可能因地区而异，以具体尺寸为准；预设只设置画布尺寸，不代表满足某个证件的全部要求。尺寸参考包括[常用寸照规格](https://www.idphoto.cn/)、[香港入境事务处](https://www.immd.gov.hk/eng/residents/immigration/traveldoc/photorequirements.html)、[加拿大护照照片要求](https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html)。缩放 100% 表示铺满画布；小于 100% 时空余区域填充所选底色（原背景模式使用白色）。
 - 人像模型与 WebAssembly 运行时随网站提供（Apache-2.0，见 public/models/NOTICE.txt）；npm 的 predev / prebuild / prepreview 会从锁定的 @mediapipe/tasks-vision 1.1.1 复制所需运行时到忽略目录 public/vendor/mediapipe/。不依赖外部 CDN，详情见 [MediaPipe 官方说明](https://developers.google.com/edge/mediapipe/solutions/vision/image_segmenter)。
+- 新增批量图片工具一次最多 12 张、合计 50 MB，每张最多 20 MB / 3200 万像素；处理副本最长边缩小到 2048 px。拼接输出最长边 8192 px、总计 1600 万像素。取色读取原图解码像素，不执行此缩小。动画仅处理第一帧。
+- 打印排版按 300 DPI 生成，完整显示照片，比例不符时留白；默认 6 寸横向相纸可排 10 张一寸照。PDF 使用实际毫米尺寸，打印需关闭适应页面并选择实际大小。一次最多排 100 张。
+- PDF 页码按原页序在选中页面连续添加，保留未选中页面，支持 90 / 180 / 270 度旋转和裁剪框。页码基线距可见页底 24 pt，可能覆盖原有页脚，下载后请核对。
+- SQL 与拼音在可中止的 Worker 中执行，10 秒超时，输入分别最多 50,000 / 10,000 字符。SQL 只整理排版，不验证数据库是否能执行；拼音多音字按词语匹配，姓名及生僻字请核对。使用 [sql-formatter](https://github.com/sql-formatter-org/sql-formatter) 15.9.0 和 [pinyin-pro](https://pinyin-pro.cn/) 3.29.5（均 MIT），随构建提供，无外部 API。
+- 人民币大写使用十进制文本分组，整数最多 16 位、小数最多 2 位，不经浮点转换或自动四舍五入。随机数范围 -10 亿至 10 亿，每次最多 1000 个，使用 Web Crypto 拒绝采样及无放回抽样。
 
 ## 扩展结构
 

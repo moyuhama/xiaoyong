@@ -25,6 +25,18 @@ const DailyTools = defineAsyncComponent(
   () => import("./components/DailyTools.vue"),
 );
 const extraModules = {
+  "image-batch": defineAsyncComponent(
+    () => import("./components/ImageBatchTools.vue"),
+  ),
+  "image-utility": defineAsyncComponent(
+    () => import("./components/ImageUtilityTools.vue"),
+  ),
+  "text-workshop": defineAsyncComponent(
+    () => import("./components/TextWorkshop.vue"),
+  ),
+  "number-tools": defineAsyncComponent(
+    () => import("./components/NumberTools.vue"),
+  ),
   "id-photo": defineAsyncComponent(
     () => import("./components/IdPhotoTool.vue"),
   ),
