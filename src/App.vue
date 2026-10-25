@@ -25,6 +25,9 @@ const DailyTools = defineAsyncComponent(
   () => import("./components/DailyTools.vue"),
 );
 const extraModules = {
+  "id-photo": defineAsyncComponent(
+    () => import("./components/IdPhotoTool.vue"),
+  ),
   config: defineAsyncComponent(() => import("./components/ConfigTools.vue")),
   cron: defineAsyncComponent(() => import("./components/CronTool.vue")),
   "text-extras": defineAsyncComponent(

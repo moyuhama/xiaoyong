@@ -16,6 +16,7 @@ export interface Tool {
     | "cron"
     | "text-extras"
     | "picture"
+    | "id-photo"
     | "pdf"
     | "clock";
 }
@@ -28,6 +29,17 @@ export const categories = [
   { id: "daily", name: "生活常用", icon: "Shapes" },
 ];
 export const tools: Tool[] = [
+  {
+    id: "id-photo",
+    name: "证件照制作",
+    description: "调整证件照尺寸与构图，自动换成红、白、蓝底。",
+    category: "image",
+    icon: "ContactRound",
+    color: "blue",
+    keywords: "证件照 一寸 二寸 报名照 人像 换底 背景 抠图 裁剪 ID photo",
+    module: "id-photo",
+    badge: "新增",
+  },
   {
     id: "image-crop",
     name: "图片裁剪与旋转",

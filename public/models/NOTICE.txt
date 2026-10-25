@@ -1,0 +1,10 @@
+MediaPipe Selfie Segmentation (square), float16, version 1
+Copyright Google / The MediaPipe Authors. Apache License 2.0.
+Unmodified model from:
+https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite
+Model card and limitations:
+https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Selfie%20Segmentation.pdf
+
+The WebAssembly runtime is copied unmodified from @mediapipe/tasks-vision 1.1.1
+(Apache-2.0) during dev/build. Both model and runtime are served by this website.
+Photos and segmentation results are processed in the visitor's browser.

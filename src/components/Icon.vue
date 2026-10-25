@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import {
+  ContactRound,
+  RotateCw,
   Files,
   Crop,
   Stamp,
@@ -71,6 +73,8 @@ const props = withDefaults(
   { size: 20, strokeWidth: 1.8 },
 );
 const icons: Record<string, any> = {
+  ContactRound,
+  RotateCw,
   Files,
   Crop,
   Stamp,
