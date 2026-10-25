@@ -37,6 +37,29 @@ describe("证件照构图和导出参数", () => {
         }
     }
   });
+  it("缩小后居中留底，并允许将照片移动到边缘", () => {
+    const center = photoPlacement(600, 800, 300, 400, 0.5, 0, 0);
+    expect(center).toMatchObject({ width: 150, height: 200, x: 75, y: 100 });
+    expect(photoPlacement(600, 800, 300, 400, 0.5, -1, -1)).toMatchObject({
+      x: 0,
+      y: 0,
+    });
+    const end = photoPlacement(600, 800, 300, 400, 0.5, 1, 1);
+    expect(end.x + end.width).toBe(300);
+    expect(end.y + end.height).toBe(400);
+    for (const invalid of [0.49, 3.01, NaN])
+      expect(() => photoPlacement(600, 800, 300, 400, invalid, 0, 0)).toThrow();
+  });
+  it("横图缩小时能同时裁去左右并保留上下底色", () => {
+    for (const offset of [-1, 0, 1]) {
+      const pos = photoPlacement(2000, 500, 300, 400, 0.5, offset, offset);
+      expect(pos.x).toBeLessThanOrEqual(0);
+      expect(pos.x + pos.width).toBeGreaterThanOrEqual(300);
+      expect(pos.y).toBeGreaterThanOrEqual(0);
+      expect(pos.y + pos.height).toBeLessThanOrEqual(400);
+      expect(pos.width / pos.height).toBe(4);
+    }
+  });
   it("蒙版保留确定人像、去掉背景，并可收紧边缘", () => {
     expect(maskAlpha(0, 50)).toBe(0);
     expect(maskAlpha(1, 50)).toBe(255);

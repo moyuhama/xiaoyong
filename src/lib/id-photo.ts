@@ -1,7 +1,49 @@
-export const photoSizes = [
-  { id: "one", name: "一寸", mmWidth: 25, mmHeight: 35 },
-  { id: "two", name: "二寸", mmWidth: 35, mmHeight: 49 },
+export const photoSizeGroups = ["通用寸照", "其他常用规格"];
+export const photoSizes: {
+  id: string;
+  name?: string;
+  group: string;
+  mmWidth: number;
+  mmHeight: number;
+}[] = [
+  {
+    id: "small-one",
+    name: "小一寸",
+    group: "通用寸照",
+    mmWidth: 22,
+    mmHeight: 32,
+  },
+  { id: "one", name: "一寸", group: "通用寸照", mmWidth: 25, mmHeight: 35 },
+  {
+    id: "large-one",
+    name: "大一寸",
+    group: "通用寸照",
+    mmWidth: 33,
+    mmHeight: 48,
+  },
+  {
+    id: "small-two",
+    name: "小二寸",
+    group: "通用寸照",
+    mmWidth: 35,
+    mmHeight: 45,
+  },
+  { id: "two", name: "二寸", group: "通用寸照", mmWidth: 35, mmHeight: 49 },
+  {
+    id: "large-two",
+    name: "大二寸",
+    group: "通用寸照",
+    mmWidth: 35,
+    mmHeight: 53,
+  },
+  { id: "26x32", group: "其他常用规格", mmWidth: 26, mmHeight: 32 },
+  { id: "30x40", group: "其他常用规格", mmWidth: 30, mmHeight: 40 },
+  { id: "35x50", group: "其他常用规格", mmWidth: 35, mmHeight: 50 },
+  { id: "40x50", group: "其他常用规格", mmWidth: 40, mmHeight: 50 },
+  { id: "50x70", group: "其他常用规格", mmWidth: 50, mmHeight: 70 },
+  { id: "51x51", group: "其他常用规格", mmWidth: 51, mmHeight: 51 },
 ];
+export const photoZoom = { min: 50, max: 300, step: 10 };
 export function photoDimensions(id: string, width = 295, height = 413) {
   const preset = photoSizes.find((size) => size.id === id);
   const result = preset
@@ -35,22 +77,25 @@ export function photoPlacement(
       Number.isFinite,
     ) ||
     Math.min(iw, ih, width, height) <= 0 ||
-    zoom < 1 ||
-    zoom > 3
+    zoom < photoZoom.min / 100 ||
+    zoom > photoZoom.max / 100
   )
     throw new Error("照片尺寸或缩放比例无效");
   const scale = Math.max(width / iw, height / ih) * zoom;
   const drawnWidth = iw * scale,
     drawnHeight = ih * scale;
-  const limitX = Math.max(0, (drawnWidth - width) / 2),
-    limitY = Math.max(0, (drawnHeight - height) / 2);
+  // Larger photos stay over the crop; smaller photos can move within its background.
+  const limitX = Math.abs(drawnWidth - width) / 2,
+    limitY = Math.abs(drawnHeight - height) / 2;
   return {
     width: drawnWidth,
     height: drawnHeight,
     limitX,
     limitY,
-    x: -limitX + Math.max(-1, Math.min(1, horizontal)) * limitX,
-    y: -limitY + Math.max(-1, Math.min(1, vertical)) * limitY,
+    x:
+      (width - drawnWidth) / 2 + Math.max(-1, Math.min(1, horizontal)) * limitX,
+    y:
+      (height - drawnHeight) / 2 + Math.max(-1, Math.min(1, vertical)) * limitY,
   };
 }
 export function maskAlpha(confidence: number, edge: number) {

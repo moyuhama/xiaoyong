@@ -7,7 +7,9 @@ import {
   maskAlpha,
   photoDimensions,
   photoPlacement,
+  photoSizeGroups,
   photoSizes,
+  photoZoom,
   setPhotoDpi,
   type PortraitMask,
 } from "../lib/id-photo";
@@ -122,6 +124,24 @@ function resetPosition() {
   zoom.value = 100;
   horizontal.value = 0;
   vertical.value = 0;
+}
+function setZoom(value: number) {
+  if (busy.value || !Number.isFinite(value)) return;
+  zoom.value = Math.max(
+    photoZoom.min,
+    Math.min(photoZoom.max, Math.round(value)),
+  );
+  drag = undefined;
+}
+function zoomWheel(event: WheelEvent) {
+  if (busy.value || !event.deltaY) return;
+  event.preventDefault();
+  const pixels =
+    event.deltaY *
+    (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 300 : 1);
+  setZoom(
+    zoom.value * Math.exp(-Math.max(-100, Math.min(100, pixels)) * 0.002),
+  );
 }
 function makeSource() {
   if (!original) return;
@@ -362,7 +382,17 @@ function moveDrag(event: PointerEvent) {
     );
 }
 function moveKey(event: KeyboardEvent) {
-  if (busy.value || !event.key.startsWith("Arrow")) return;
+  if (busy.value) return;
+  if (["+", "=", "-", "0"].includes(event.key)) {
+    event.preventDefault();
+    if (event.key === "0") resetPosition();
+    else
+      setZoom(
+        zoom.value + (event.key === "-" ? -photoZoom.step : photoZoom.step),
+      );
+    return;
+  }
+  if (!event.key.startsWith("Arrow")) return;
   event.preventDefault();
   if (event.key === "ArrowLeft")
     horizontal.value = Math.max(-100, horizontal.value - 2);
@@ -493,13 +523,23 @@ onUnmounted(() => {
             <legend>照片规格</legend>
             <label class="field-label"
               >输出尺寸<select v-model="sizeId" aria-label="证件照尺寸">
-                <option
-                  v-for="size in photoSizes"
-                  :key="size.id"
-                  :value="size.id"
+                <optgroup
+                  v-for="group in photoSizeGroups"
+                  :key="group"
+                  :label="group"
                 >
-                  {{ size.name }} · {{ size.mmWidth }} × {{ size.mmHeight }} mm
-                </option>
+                  <option
+                    v-for="size in photoSizes.filter(
+                      (size) => size.group === group,
+                    )"
+                    :key="size.id"
+                    :value="size.id"
+                  >
+                    {{ size.mmWidth }} × {{ size.mmHeight }} mm{{
+                      size.name ? " · " + size.name : ""
+                    }}
+                  </option>
+                </optgroup>
                 <option value="custom">自定义像素</option>
               </select></label
             >
@@ -521,6 +561,10 @@ onUnmounted(() => {
             <p class="id-spec-note" v-if="dimensions.value">
               {{ dimensions.value.width }} × {{ dimensions.value.height }} px ·
               300 DPI
+            </p>
+            <p class="id-spec-note">
+              共 {{ photoSizes.length }} 种规格，尺寸均为宽 ×
+              高；名称有差异时请以毫米尺寸为准。
             </p>
           </fieldset>
           <fieldset :disabled="busy">
@@ -578,8 +622,8 @@ onUnmounted(() => {
               >缩放 {{ zoom }}%<input
                 v-model.number="zoom"
                 type="range"
-                min="100"
-                max="300"
+                :min="photoZoom.min"
+                :max="photoZoom.max"
                 aria-label="照片缩放"
             /></label>
             <label class="field-label"
@@ -633,13 +677,14 @@ onUnmounted(() => {
               <canvas
                 ref="preview"
                 tabindex="0"
-                aria-label="证件照预览，拖动或用方向键调整位置"
+                aria-label="证件照预览，拖动或方向键调整位置，滚轮或加减键缩放"
                 @pointerdown="startDrag"
                 @pointermove="moveDrag"
                 @pointerup="drag = undefined"
                 @pointercancel="drag = undefined"
                 @lostpointercapture="drag = undefined"
                 @keydown="moveKey"
+                @wheel="zoomWheel"
               />
               <div v-if="guides" class="id-photo-guides" aria-hidden="true">
                 <i /><i /><i /><i />
@@ -655,8 +700,37 @@ onUnmounted(() => {
             </div>
             <p v-else class="preview-empty">请先填写有效的输出尺寸</p>
           </div>
+          <div class="id-zoom-toolbar" role="group" aria-label="照片缩放控制">
+            <button
+              class="button secondary"
+              aria-label="缩小照片"
+              :disabled="busy || zoom <= photoZoom.min"
+              @click="setZoom(zoom - photoZoom.step)"
+            >
+              <Icon name="Minus" :size="16" />缩小
+            </button>
+            <output aria-label="当前缩放比例">{{ zoom }}%</output>
+            <button
+              class="button secondary"
+              aria-label="放大照片"
+              :disabled="busy || zoom >= photoZoom.max"
+              @click="setZoom(zoom + photoZoom.step)"
+            >
+              <Icon name="Plus" :size="16" />放大
+            </button>
+            <button class="text-button" :disabled="busy" @click="resetPosition">
+              铺满重置
+            </button>
+          </div>
           <p class="id-preview-hint">
-            拖动照片调整位置，辅助线不会出现在导出图片中
+            拖动调整位置，滚轮或按钮缩放 · {{ photoZoom.min }}%–{{
+              photoZoom.max
+            }}%<br />
+            <template v-if="zoom < 100"
+              >空余区域填充{{
+                background === "original" ? "白色" : "所选底色"
+              }}；</template
+            >辅助线不会出现在导出图片中
           </p>
           <div class="id-export-settings">
             <label class="field-label"

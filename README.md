@@ -26,7 +26,7 @@
 - 二维码生成（PNG / SVG）、日期与时间戳换算、HEX / RGB / HSL 转换
 - 长度 / 重量 / 温度 / 面积 / 体积 / 数据容量换算、百分比计算、随机抽签
 - 图片裁剪 / 旋转 / 镜像、单处与平铺文字水印
-- 证件照制作：一寸 / 二寸 / 自定义像素、红白蓝与自定义换底、构图缩放和亮度调整、JPG / PNG 导出（300 DPI）
+- 证件照制作：12 种常用规格 / 自定义像素、红白蓝与自定义换底、50%–300% 缩放（滑块、加减按钮、滚轮及键盘）、构图和亮度调整、JPG / PNG 导出（300 DPI）
 - PDF 合并与排序、按页码范围提取与重排
 - YAML / JSON 互转、JWT 解析、Cron 表达式解析、HTML 字符实体转义与还原
 - 文本查找替换、名单与列表的交集 / 差集 / 并集
@@ -73,6 +73,7 @@
 - 查找替换按原文匹配，替换内容中的美元符保持原样；输入最多 200,000 字符，结果最多 2,000,000 字符。名单对比去掉空白行和重复项，保留首次出现的拼写与顺序。
 - 世界时钟使用 IANA 时区并按所选日期应用夏令时。倒计时最长 24 小时，以目标时刻校准；秒表使用单调时钟，支持暂停和分段记录。离开工具页会结束计时，页面关闭后不提醒。
 - 证件照输出每边 100–2000 px，源图处理时最长边缩小到 2048 px。采用 MediaPipe Selfie Segmentation 做人像换底，适合单人正面近照；复杂背景、发丝或衣服边缘可能需要调整，不进行证件合规检测。照片在浏览器内处理，模型在首次换底时加载；失败后可保留原背景继续裁剪。
+- 证件照预设均按宽 × 高（mm）以 300 DPI 换算像素：22×32、25×35、33×48、35×45、35×49、35×53、26×32、30×40、35×50、40×50、50×70、51×51。寸照名称可能因地区而异，以具体尺寸为准；预设只设置画布尺寸，不代表满足某个证件的全部要求。尺寸参考包括[常用寸照规格](https://www.idphoto.cn/)、[香港入境事务处](https://www.immd.gov.hk/eng/residents/immigration/traveldoc/photorequirements.html)、[加拿大护照照片要求](https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html)。缩放 100% 表示铺满画布；小于 100% 时空余区域填充所选底色（原背景模式使用白色）。
 - 人像模型与 WebAssembly 运行时随网站提供（Apache-2.0，见 public/models/NOTICE.txt）；npm 的 predev / prebuild / prepreview 会从锁定的 @mediapipe/tasks-vision 1.1.1 复制所需运行时到忽略目录 public/vendor/mediapipe/。不依赖外部 CDN，详情见 [MediaPipe 官方说明](https://developers.google.com/edge/mediapipe/solutions/vision/image_segmenter)。
 
 ## 扩展结构

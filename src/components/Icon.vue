@@ -66,6 +66,7 @@ import {
   Command,
   Info,
   Plus,
+  Minus,
   Leaf,
 } from "@lucide/vue";
 const props = withDefaults(
@@ -138,6 +139,7 @@ const icons: Record<string, any> = {
   Command,
   Info,
   Plus,
+  Minus,
   Leaf,
 };
 const icon = computed(() => icons[props.name] || Shapes);
