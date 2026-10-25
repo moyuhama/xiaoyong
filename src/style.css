@@ -1073,6 +1073,10 @@ input[type="date"],
   border-top: 1px solid var(--border);
   flex-wrap: wrap;
 }
+.json-actions {
+  border-top: 0;
+  border-bottom: 1px solid var(--border);
+}
 .workspace-footnote {
   display: flex;
   align-items: flex-start;

@@ -256,11 +256,12 @@ export const tools: Tool[] = [
   {
     id: "json",
     name: "JSON 格式化",
-    description: "整理杂乱的 JSON，格式化、压缩与校验。",
+    description: "JSON 格式化校验、压缩、转义与去除转义。",
     category: "dev",
     icon: "Braces",
     color: "green",
-    keywords: "json 格式化 格式 校验 压缩 美化",
+    keywords:
+      "json 格式化 格式 校验 压缩 美化 转义 去除转义 还原 escape unescape",
     badge: "常用",
   },
   {

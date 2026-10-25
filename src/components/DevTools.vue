@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref, watch } from "vue";
 import Icon from "./Icon.vue";
 import EditorPanel from "./EditorPanel.vue";
 import { encodeText, generatePassword } from "../lib/transform";
+import { processJson, type JsonAction } from "../lib/json-tools";
 import { copy, downloadText, notify } from "../lib/ui";
 const props = defineProps<{ toolId: string }>();
 const input = ref(""),
@@ -11,6 +12,23 @@ const input = ref(""),
 const indent = ref("2"),
   encodingMode = ref("base64"),
   decode = ref(false);
+const jsonQuotes = ref(false),
+  jsonDone = ref(false),
+  jsonAction = ref<JsonAction>("format");
+const jsonStatus = computed(() => {
+  if (jsonAction.value === "escape") return "已完成转义";
+  if (jsonAction.value === "unescape")
+    return result.value ? "已去除一层转义" : "已还原为空字符串";
+  return jsonAction.value === "minify"
+    ? "校验通过 · 已压缩"
+    : "校验通过 · 已格式化";
+});
+const jsonFilename = computed(() => {
+  if (jsonAction.value === "escape")
+    return jsonQuotes.value ? "escaped.json" : "escaped.txt";
+  if (jsonAction.value === "unescape") return "unescaped.txt";
+  return jsonAction.value === "minify" ? "minified.json" : "formatted.json";
+});
 const pattern = ref(""),
   flags = ref("g"),
   busy = ref(false);
@@ -37,31 +55,33 @@ const encoded = computed(() => {
     };
   }
 });
-function formatJson(minify = false) {
+function runJson(action: JsonAction) {
   error.value = "";
   result.value = "";
-  if (!input.value.trim()) {
-    error.value = "请先输入 JSON 内容";
-    return;
-  }
-  if (input.value.length > 2000000) {
-    error.value = "请将 JSON 控制在 2 MB 文本以内";
-    return;
-  }
+  jsonDone.value = false;
+  jsonAction.value = action;
   try {
-    result.value = JSON.stringify(
-      JSON.parse(input.value),
-      null,
-      minify ? 0 : indent.value === "tab" ? "\t" : Number(indent.value),
+    result.value = processJson(
+      input.value,
+      action,
+      indent.value === "tab" ? "\t" : Number(indent.value),
+      jsonQuotes.value,
     );
+    jsonDone.value = true;
   } catch (err) {
-    error.value =
-      "JSON 格式有误：" + (err instanceof Error ? err.message : "请检查输入");
+    error.value = err instanceof Error ? err.message : "处理失败，请检查输入";
   }
+}
+function useJsonResult() {
+  input.value = result.value;
+  result.value = "";
+  error.value = "";
+  jsonDone.value = false;
 }
 function example() {
   error.value = "";
   result.value = "";
+  jsonDone.value = false;
   if (props.toolId === "json")
     input.value =
       '{"name":"小用工具箱","version":1,"features":["本地处理","免费使用"],"simple":true}';
@@ -141,10 +161,11 @@ function generate() {
     error.value = err instanceof Error ? err.message : "无法生成，请检查选项";
   }
 }
-watch([input, indent], () => {
+watch([input, indent, jsonQuotes], () => {
   if (props.toolId === "json") {
     result.value = "";
     error.value = "";
+    jsonDone.value = false;
   }
 });
 watch(
@@ -349,6 +370,11 @@ onUnmounted(cancelRegex);
                 <option value="4">4 个空格</option>
                 <option value="tab">Tab</option>
               </select></label
+            ><label class="check-label"
+              ><input
+                v-model="jsonQuotes"
+                type="checkbox"
+              />转义时保留外层双引号</label
             ></template
           ><template v-else
             ><div class="segmented">
@@ -379,11 +405,31 @@ onUnmounted(cancelRegex);
               input = '';
               result = '';
               error = '';
+              jsonDone = false;
             "
           >
             <Icon name="RotateCcw" :size="17" />
           </button>
         </div>
+      </div>
+      <div
+        v-if="toolId === 'json'"
+        class="action-row json-actions"
+        role="group"
+        aria-label="JSON 操作"
+      >
+        <button class="button primary" @click="runJson('format')">
+          <Icon name="Braces" :size="17" />格式化校验
+        </button>
+        <button class="button secondary" @click="runJson('minify')">
+          压缩
+        </button>
+        <button class="button secondary" @click="runJson('escape')">
+          转义
+        </button>
+        <button class="button secondary" @click="runJson('unescape')">
+          去除转义
+        </button>
       </div>
       <div class="editor-grid">
         <EditorPanel
@@ -391,7 +437,7 @@ onUnmounted(cancelRegex);
           :title="toolId === 'json' ? '输入 JSON' : '输入内容'"
           :placeholder="
             toolId === 'json'
-              ? '在这里粘贴 JSON，或点击「填入示例」…'
+              ? '在这里粘贴 JSON 或转义文本，或点击「填入示例」…'
               : '输入需要处理的文字…'
           "
           code
@@ -400,27 +446,26 @@ onUnmounted(cancelRegex);
           title="处理结果"
           :placeholder="
             toolId === 'json'
-              ? '格式化后的 JSON 会显示在这里'
+              ? '选择上方操作，处理结果会显示在这里'
               : '编码或解码后的结果会实时显示'
           "
           readonly
           code
-          :filename="toolId === 'json' ? 'formatted.json' : 'encoded.txt'"
+          :filename="toolId === 'json' ? jsonFilename : 'encoded.txt'"
         />
       </div>
-      <div v-if="toolId === 'json'" class="action-row">
-        <button class="button primary" @click="formatJson()">
-          <Icon name="Braces" :size="17" />格式化与校验</button
-        ><button class="button secondary" @click="formatJson(true)">
-          压缩 JSON</button
-        ><span v-if="result" class="success-text"
-          ><Icon name="Check" :size="15" />有效的 JSON</span
+      <div v-if="toolId === 'json' && jsonDone" class="action-row">
+        <span class="success-text" role="status"
+          ><Icon name="Check" :size="15" />{{ jsonStatus }}</span
         >
+        <button class="text-button" :disabled="!result" @click="useJsonResult">
+          结果用作输入
+        </button>
       </div>
       <div class="workspace-footnote">
         <Icon name="Info" :size="15" />{{
           toolId === "json"
-            ? "使用标准 JSON 解析。超出 JavaScript 安全整数范围的编号，请用字符串表示。"
+            ? "转义可选保留外层双引号；去除转义每次还原一层。格式化与压缩使用标准 JSON 解析，大整数编号请用字符串表示。"
             : "支持中文与 emoji。URL 模式按 URI 组件转换；Base64 是编码方式，不是加密。"
         }}
       </div>
