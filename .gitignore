@@ -10,3 +10,4 @@ test-results/
 
 .artifacts/
 public/vendor/mediapipe/
+public/vendor/utilities/

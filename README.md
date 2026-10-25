@@ -1,6 +1,6 @@
 # 小用 · 让每件小事更简单
 
-面向日常与开发工作的中文工具箱。43 个工具全部在浏览器本地处理，无需账户、数据库或服务端 API。
+面向日常与开发工作的中文工具箱。70 个工具全部在浏览器本地处理，无需账户、数据库或服务端 API。
 
 [在线使用](https://moyuhama.github.io/xiaoyong/) · [GitHub 仓库](https://github.com/moyuhama/xiaoyong)
 
@@ -41,6 +41,17 @@
 - 汉字转拼音：声调 / 数字声调 / 无声调 / 首字母，姓氏模式与大小写
 - 人民币大写：保留分位与大整数，支持负数及规范千位逗号
 - 随机数生成：整数范围、批量不重复抽取、排序与分隔方式
+
+- 图片文字识别：简体中文与英文印刷体，自动段落 / 零散文字，TXT 导出
+- 二维码图片识别、CODE128 / CODE39 / EAN13 / EAN8 / UPC 条形码生成（PNG / SVG）
+- 图片圆角与边框、灰度 / 复古滤镜、亮度 / 对比度 / 饱和度调整
+- PDF 转 PNG / JPG（72 / 150 / 300 DPI、逐页或 ZIP 下载）、PDF 提取文字、PDF 指定页面旋转
+- ZIP 打包与解压、文件 SHA 哈希校验、文件与 Base64 / Data URL 互转
+- Word（DOCX）正文与表格文字提取、Excel（XLSX）多工作表预览与 CSV 导出
+- 简繁体与台湾用词转换、大小写与驼峰 / 下划线等命名转换、摩斯电码、邮箱 / 链接 / IPv4 提取
+- Unicode 编解码、ASCII 码表、XML 格式化与 JSON 转换、JavaScript / HTML / CSS 格式化
+- JSON 转 TypeScript 类型、JSON 结构对比、JSON 路径查询
+- 科学计算器（角度 / 弧度、三角函数、阶乘等）、工作日计算（自定义休息与补班日期）、数据统计（均值 / 中位数 / 方差等）
 
 支持分类搜索、深色模式、手机布局与键盘搜索（Ctrl / Command + K）。
 
@@ -91,8 +102,19 @@
 - SQL 与拼音在可中止的 Worker 中执行，10 秒超时，输入分别最多 50,000 / 10,000 字符。SQL 只整理排版，不验证数据库是否能执行；拼音多音字按词语匹配，姓名及生僻字请核对。使用 [sql-formatter](https://github.com/sql-formatter-org/sql-formatter) 15.9.0 和 [pinyin-pro](https://pinyin-pro.cn/) 3.29.5（均 MIT），随构建提供，无外部 API。
 - 人民币大写使用十进制文本分组，整数最多 16 位、小数最多 2 位，不经浮点转换或自动四舍五入。随机数范围 -10 亿至 10 亿，每次最多 1000 个，使用 Web Crypto 拒绝采样及无放回抽样。
 
+- OCR 使用 Tesseract.js 7.0.0 与中文、英文语言文件，识别运行在 Worker 内；120 秒超时，处理最长边 3000 px。模型、运行时和语言文件由构建脚本复制至同源静态资源目录，首次使用按需加载，无外部识别 API。识别适合清晰印刷体，手写、竖排和复杂表格需要人工核对。
+- PDF 渲染使用 PDF.js 6.4.299，字体、字符映射与 WASM 随站点提供。单文件最多 20 MB / 500 页；一次最多导出 20 页图片（总计 50 MB、单图 1600 万像素）或 100 页文字。文字提取依赖 PDF 的文本层，扫描件需先转图片再 OCR；不支持加密 PDF。
+- ZIP 支持存储 / Deflate，输入 20 MB、200 条目、展开 50 MB，检查路径、重复名与 CRC。打包最多 100 个文件、50 MB；不支持 ZIP64、分卷、加密、RAR 或 7z。Office 文档解包也应用同样的大小限制。
+- Word 只提取 DOCX 文字，不保留图片与排版；Excel 只处理 XLSX，最多 50 张表、每张 10,000 行 / 500 列、合计 200,000 单元格，使用已保存的公式结果，不重新计算，预览前 30 行与 12 列。导出 CSV 默认防止字符串被识别成公式，日期输出 ISO。
+- 新增文本工具在可取消 Worker 内运行，10 秒超时，通常最多 200,000 字符，代码格式化最多 100,000。XML 禁止 DTD / 实体声明，属性使用 `@_`、文本使用 `#text`；JSON 查询只支持属性、数组下标及通配符，不执行脚本或过滤表达式。JSON 数字仍受 JavaScript 精度约束。
+- 工作日默认周一至周五，可自行填写休息和补班日期；不内置各地区法定节假日。科学计算器解析限定表达式，不执行 JavaScript；结果受浮点精度限制。统计最多 10,000 个数值，分别给出总体和样本方差。
+- 新增依赖包括 Tesseract.js / PDF.js（Apache-2.0）、jsQR（Apache-2.0）、OpenCC-JS（MIT 与 Apache-2.0）、Mammoth（BSD-2-Clause）、JsBarcode / fflate / read-excel-file / Prettier / fast-xml-parser（MIT）。静态 OCR 与 PDF 资源附带上游 LICENSE / NOTICE，详情见 scripts/prepare-utilities.mjs。
+
 ## 扩展结构
 
+- src/lib/popular-tools.ts：新增 27 个工具的元数据
+- src/lib/popular-text.ts、file-utilities.ts、math-tools.ts：文本、文件和计算逻辑
+- scripts/prepare-utilities.mjs：准备同源 OCR 模型与 PDF 渲染资源
 - src/lib/tools.ts：工具名称、分类、关键词与图标登记
 - src/components/*Tools.vue、*Extras.vue：工具界面，按模块加载
 - src/lib/transform.ts：可独立验证的文本、编码、颜色、时间与随机函数

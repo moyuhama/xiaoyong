@@ -25,6 +25,18 @@ const DailyTools = defineAsyncComponent(
   () => import("./components/DailyTools.vue"),
 );
 const extraModules = {
+  "popular-text": defineAsyncComponent(
+    () => import("./components/PopularTextTools.vue"),
+  ),
+  math: defineAsyncComponent(() => import("./components/MathTools.vue")),
+  files: defineAsyncComponent(() => import("./components/FileUtilities.vue")),
+  scan: defineAsyncComponent(() => import("./components/ScanTools.vue")),
+  "image-polish": defineAsyncComponent(
+    () => import("./components/ImagePolishTools.vue"),
+  ),
+  "pdf-read": defineAsyncComponent(
+    () => import("./components/PdfReadTools.vue"),
+  ),
   "image-batch": defineAsyncComponent(
     () => import("./components/ImageBatchTools.vue"),
   ),
@@ -337,7 +349,6 @@ onUnmounted(() => {
               {{ category.name }}
             </button>
           </div>
-          <span class="catalog-count">{{ filtered.length }} 个工具</span>
         </div>
         <div class="section-title">
           <h2>
@@ -346,9 +357,7 @@ onUnmounted(() => {
               >为每一个小需求，找到好帮手</span
             >
           </h2>
-          <span v-if="view === 'all' && !query" class="section-hint"
-            ><Icon name="Sparkles" :size="14" /> 持续打磨中</span
-          >
+          <span class="section-hint">{{ filtered.length }} 个工具</span>
         </div>
         <div v-if="filtered.length" class="tool-grid">
           <article

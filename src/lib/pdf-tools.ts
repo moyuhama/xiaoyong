@@ -4,9 +4,10 @@ export interface PdfInput {
   bytes: Uint8Array;
 }
 export interface PdfRequest {
-  operation: "inspect" | "merge" | "extract" | "number";
+  operation: "inspect" | "merge" | "extract" | "number" | "rotate";
   files: PdfInput[];
   range?: string;
+  rotation?: number;
   numbering?: {
     start: number;
     size: number;
@@ -50,7 +51,7 @@ export async function processPdf(request: PdfRequest): Promise<PdfResult> {
   )
     throw new Error("文件总大小请控制在 50 MB 以内");
   if (
-    ["extract", "number"].includes(request.operation) &&
+    ["extract", "number", "rotate"].includes(request.operation) &&
     request.files.length !== 1
   )
     throw new Error("此工具每次处理一个文件");
@@ -81,6 +82,21 @@ export async function processPdf(request: PdfRequest): Promise<PdfResult> {
         : doc.getPageIndices();
     const pages = await output.copyPages(doc, indices);
     for (const page of pages) output.addPage(page);
+  }
+  if (request.operation === "rotate") {
+    if (![90, 180, 270].includes(request.rotation || 0))
+      throw new Error("旋转角度需为 90、180 或 270 度");
+    for (const index of parsePageRange(
+      request.range || "",
+      output.getPageCount(),
+    )) {
+      const page = output.getPage(index);
+      page.setRotation(
+        degrees(
+          (((page.getRotation().angle + request.rotation!) % 360) + 360) % 360,
+        ),
+      );
+    }
   }
   if (request.operation === "number") {
     const settings = request.numbering;

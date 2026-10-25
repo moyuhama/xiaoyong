@@ -1,3 +1,4 @@
+import { popularTools } from "./popular-tools";
 export type Category = "text" | "image" | "dev" | "daily" | "file";
 export interface Tool {
   id: string;
@@ -22,17 +23,24 @@ export interface Tool {
     | "image-batch"
     | "image-utility"
     | "text-workshop"
-    | "number-tools";
+    | "number-tools"
+    | "popular-text"
+    | "math"
+    | "files"
+    | "scan"
+    | "image-polish"
+    | "pdf-read";
 }
 export const categories = [
   { id: "all", name: "全部工具", icon: "LayoutGrid" },
   { id: "text", name: "文本处理", icon: "Type" },
   { id: "image", name: "图片工具", icon: "Image" },
-  { id: "file", name: "PDF 工具", icon: "Files" },
+  { id: "file", name: "文件与 PDF", icon: "Files" },
   { id: "dev", name: "开发工具", icon: "CodeXml" },
   { id: "daily", name: "生活常用", icon: "Shapes" },
 ];
 export const tools: Tool[] = [
+  ...popularTools,
   {
     id: "image-stitch",
     name: "图片拼接",
