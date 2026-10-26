@@ -34,7 +34,9 @@ function dateParts(value: number, zone: string) {
     minute: Number(get("minute")),
     second: Number(get("second")),
     millisecond: ((value % 1000) + 1000) % 1000,
-    offset: get("timeZoneName").replace("GMT", "UTC"),
+    offset: get("timeZoneName")
+      .replace("GMT", "UTC")
+      .replace(/^UTC[+-]00:00$/, "UTC"),
   };
 }
 type DateParts = ReturnType<typeof dateParts>;

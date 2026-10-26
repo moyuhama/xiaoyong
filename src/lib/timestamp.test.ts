@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   readTimestamp,
   readDateTime,
@@ -39,6 +39,22 @@ describe("时间戳入口和单位", () => {
   });
 });
 describe("日期、精度与时区", () => {
+  it("不同运行环境的零时区名称统一为 UTC", () => {
+    const original = Intl.DateTimeFormat.prototype.formatToParts;
+    const spy = vi.spyOn(Intl.DateTimeFormat.prototype, "formatToParts");
+    try {
+      for (const name of ["GMT", "GMT+00:00", "GMT-00:00"]) {
+        spy.mockImplementation(function (this: Intl.DateTimeFormat, date) {
+          return original.call(this, date).map((part) =>
+            part.type === "timeZoneName" ? { ...part, value: name } : part,
+          );
+        });
+        expect(timestampDetails(0, "UTC").offset).toBe("UTC");
+      }
+    } finally {
+      spy.mockRestore();
+    }
+  });
   it("北京时间与 UTC 互转保留毫秒", () => {
     const ms = readDateTime("2025-01-01 08:00:00.123", "Asia/Shanghai");
     expect(ms).toBe(1735689600123);
