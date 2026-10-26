@@ -23,7 +23,7 @@
 - 图片压缩、图片尺寸与格式转换（JPG / PNG / WebP）
 - JSON 格式化校验 / 压缩 / 转义 / 去除转义、Base64 / URL 编解码、正则测试、UUID / 密码生成
 - CSV / JSON 互转、SHA-256 / SHA-384 / SHA-512 哈希、2–36 进制整数转换、URL 结构与查询参数解析
-- 二维码生成（PNG / SVG）、日期与时间戳换算、HEX / RGB / HSL 转换
+- 二维码生成（PNG / SVG）、时间戳转换、HEX / RGB / HSL 转换
 - 长度 / 重量 / 温度 / 面积 / 体积 / 数据容量换算、百分比计算、随机抽签
 - 图片裁剪 / 旋转 / 镜像、单处与平铺文字水印
 - 证件照制作：12 种常用规格 / 自定义像素、红白蓝与自定义换底、50%–500% 缩放（滑块、加减按钮、滚轮及键盘）、构图和亮度调整、JPG / PNG 导出（300 DPI）
@@ -53,6 +53,8 @@
 - JSON 转 TypeScript 类型、JSON 结构对比、JSON 路径查询
 - 科学计算器（角度 / 弧度、三角函数、阶乘等）、工作日计算（自定义休息与补班日期）、数据统计（均值 / 中位数 / 方差等）
 
+时间戳转换已前置到首页，保留原有 `#/tool/datetime` 链接：实时秒 / 毫秒显示、暂停 / 继续、单独复制、双向转换、自动识别单位、北京时间 / UTC / 其他常用时区、批量转换、日期差以及 JavaScript / Python / Java / Go 示例代码。功能方向参考 [Tool.lu 时间戳工具](https://tool.lu/timestamp/)，沿用小用的界面设计。
+
 支持分类搜索、深色模式、手机布局与键盘搜索（Ctrl / Command + K）。
 
 前期调研参考 [IT-Tools](https://github.com/CorentinTh/it-tools) 与 [OmniTools](https://github.com/iib0011/omni-tools) 的工具分类。本轮参考 [懒人工具](https://www.lanren-tools.com/) 的图片与 PDF 目录，以及 Tool.lu 的[图片拼图](https://tool.lu/collage/)、[证件照排版](https://tool.lu/imageprint/)、[图片转 PDF](https://tool.lu/image2pdf/)、[SQL](https://tool.lu/sql/)、[ICO](https://tool.lu/favicon/)和[拼音](https://tool.lu/py5bconvert/)工具；通过 [67 工具的数字类页面公开索引](https://www.67tool.com/number/hex-to-binary)核对随机数、金额大写需求（其首页限制自动访问）。参考功能方向，按小用现有界面独立实现，不复制这些网站的页面、品牌或源码。
@@ -81,6 +83,7 @@
 - 文本差异对比合计最多 20,000 字符，计算超过 1.5 秒中止。
 - JSON 格式化与压缩使用标准 JavaScript 解析；大整数应当写成字符串。转义将输入作为原始文本处理，默认不带外层双引号，可选生成完整 JSON 字符串；去除转义兼容带或不带外层引号，每次只还原一层，保留字符串内部原本需要的反斜杠。最多 2,000,000 字符，结果可继续用作输入。
 - 密码使用 Web Crypto 随机数，确保包含所有选择的字符类型。
+- 时间戳自动模式将不超过 10 位的整数识别为秒、13 位识别为毫秒，其他位数须手动指定。日期严格校验，支持毫秒、Z 和 ±HH:mm 偏移；无偏移时按所选 IANA 时区解析。夏令时跳时与回拨歧义明确报错，可填写偏移消除歧义。支持 0001–9999 年、零与负时间戳；秒输出向下取整。批量最多 1,000 行 / 100,000 字符，逐行报告错误。实时钟使用设备时间，每秒刷新，暂停后填入与复制均取已固定的数值。
 - 日期差按 UTC 日历日期计算，以免夏令时导致天数偏差。
 - Markdown 使用 Worker 解析（2 秒超时、最多 100,000 字符），原始 HTML 作为文本显示，预览与 HTML 导出均经过 DOMPurify 清理；不加载图片或启用链接跳转。
 - CSV 第一行为表头，转 JSON 时所有值保留为字符串；支持逗号、分号、制表符、引号与多行字段。最多 2,000,000 字符、10,000 行、1,000 列、200,000 个单元格。JSON 转 CSV 默认对可能被表格识别为公式的文本加单引号，可关闭该选项进行原样转换。
@@ -112,6 +115,7 @@
 
 ## 扩展结构
 
+- src/components/TimestampTool.vue、src/lib/timestamp.ts：时间戳、严格日期解析与时区转换
 - src/lib/popular-tools.ts：新增 27 个工具的元数据
 - src/lib/popular-text.ts、file-utilities.ts、math-tools.ts：文本、文件和计算逻辑
 - scripts/prepare-utilities.mjs：准备同源 OCR 模型与 PDF 渲染资源

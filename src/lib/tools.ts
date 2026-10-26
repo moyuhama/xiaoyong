@@ -19,6 +19,7 @@ export interface Tool {
     | "picture"
     | "id-photo"
     | "pdf"
+    | "timestamp"
     | "clock"
     | "image-batch"
     | "image-utility"
@@ -40,6 +41,18 @@ export const categories = [
   { id: "daily", name: "生活常用", icon: "Shapes" },
 ];
 export const tools: Tool[] = [
+  {
+    id: "datetime",
+    name: "时间戳转换",
+    description: "实时秒与毫秒时间戳，日期互转、批量转换与时区切换。",
+    category: "daily",
+    icon: "CalendarClock",
+    color: "green",
+    keywords:
+      "时间戳 日期 时间 timestamp unix epoch 秒 毫秒 北京时间 UTC 时区 批量 日期差 天数",
+    module: "timestamp",
+    badge: "升级",
+  },
   ...popularTools,
   {
     id: "image-stitch",
@@ -468,15 +481,6 @@ export const tools: Tool[] = [
     icon: "ScanLine",
     color: "green",
     keywords: "图片 格式 转换 尺寸 缩放 png jpeg jpg webp",
-  },
-  {
-    id: "datetime",
-    name: "日期与时间戳",
-    description: "时间戳互转，算算两个日期相差多久。",
-    category: "daily",
-    icon: "CalendarClock",
-    color: "blue",
-    keywords: "时间戳 日期 时间 timestamp unix 天数 时区",
   },
   {
     id: "color",

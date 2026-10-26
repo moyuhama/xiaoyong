@@ -25,6 +25,9 @@ const DailyTools = defineAsyncComponent(
   () => import("./components/DailyTools.vue"),
 );
 const extraModules = {
+  timestamp: defineAsyncComponent(
+    () => import("./components/TimestampTool.vue"),
+  ),
   "popular-text": defineAsyncComponent(
     () => import("./components/PopularTextTools.vue"),
   ),

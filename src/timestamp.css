@@ -1,0 +1,335 @@
+.timestamp-live {
+  padding: 24px;
+  background: var(--code-bg);
+  border-bottom: 1px solid var(--border);
+}
+.timestamp-live-heading,
+.timestamp-live-actions,
+.timestamp-section-heading,
+.timestamp-zone-row,
+.timestamp-clock-date,
+.timestamp-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.timestamp-live-heading,
+.timestamp-section-heading {
+  justify-content: space-between;
+}
+.timestamp-live-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.timestamp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.timestamp-dot.paused {
+  background: var(--muted);
+}
+.timestamp-live-actions > span {
+  font-size: 11px;
+  color: var(--subtle);
+}
+.timestamp-live-actions .button {
+  padding: 7px 11px;
+  font-size: 11px;
+  min-height: 32px;
+}
+.timestamp-clock-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 18px 0 14px;
+}
+.timestamp-clock-card {
+  min-width: 0;
+  padding: 18px 20px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.timestamp-clock-card > label {
+  font-size: 11px;
+  color: var(--subtle);
+}
+.timestamp-clock-card input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 0;
+  margin: 0 0 5px;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: clamp(21px, 2.4vw, 32px);
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.6px;
+  line-height: 1.3;
+}
+.timestamp-clock-card .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 3px 0;
+}
+.timestamp-clock-date {
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.timestamp-clock-date time {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+.timestamp-clock-date > span {
+  color: var(--subtle);
+  font-size: 11px;
+}
+.timestamp-clock-date .icon-button {
+  width: 28px;
+  height: 28px;
+}
+.timestamp-zone-row {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.timestamp-zone-row .muted {
+  font-size: 10px;
+}
+.timestamp-zone-row select {
+  max-width: 250px;
+}
+.timestamp-tabs {
+  justify-content: flex-start;
+}
+.timestamp-converters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.timestamp-converter {
+  padding: 24px;
+  min-width: 0;
+}
+.timestamp-converter + .timestamp-converter {
+  border-left: 1px solid var(--border);
+}
+.timestamp-section-heading {
+  margin-bottom: 20px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.timestamp-section-heading h2 {
+  font-size: 13px;
+  font-weight: 600;
+}
+.timestamp-section-heading .text-button {
+  font-size: 10px;
+  padding: 0;
+}
+.timestamp-converter form .field-label {
+  margin-bottom: 14px;
+}
+.timestamp-converter .field-label input,
+.timestamp-result input {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.timestamp-converter .timestamp-input-help {
+  min-height: 61px;
+  color: var(--subtle);
+  font-size: 10px;
+  line-height: 1.8;
+  margin: 0 0 14px;
+}
+.timestamp-form-actions {
+  margin-top: 18px;
+}
+.timestamp-form-actions .button {
+  font-size: 11px;
+}
+.timestamp-result {
+  margin-top: 20px;
+  background: var(--soft-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+.timestamp-result-heading {
+  display: flex;
+  justify-content: space-between;
+  color: var(--subtle);
+  font-size: 10px;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+.timestamp-result .field-label {
+  margin: 0 0 12px;
+  font-size: 10px;
+}
+.timestamp-result .field-label:last-child {
+  margin-bottom: 0;
+}
+.timestamp-copy-value {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+}
+.timestamp-result .field-label > .timestamp-copy-value {
+  margin-top: 0;
+  align-self: stretch;
+}
+.timestamp-copy-value input {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  border: none;
+  background: transparent;
+  padding: 2px 0;
+  color: var(--text);
+  font-size: 12px;
+}
+.timestamp-copy-value .icon-button {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+}
+.timestamp-empty {
+  color: var(--muted);
+  font-size: 11px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 18px 14px;
+  margin-top: 20px;
+}
+.timestamp-converter .error-message {
+  margin: 16px 0 0;
+}
+.timestamp-batch-options .toolbar-options {
+  flex-wrap: wrap;
+}
+.timestamp-code {
+  padding: 24px;
+}
+.timestamp-code pre {
+  margin: 0;
+  padding: 20px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow-x: auto;
+  line-height: 1.9;
+  font-size: 12px;
+}
+.timestamp-code > a {
+  display: inline-block;
+  margin-top: 14px;
+  color: var(--primary);
+  font-size: 11px;
+}
+.timestamp-notes {
+  border-top: 1px solid var(--border);
+  padding: 16px 24px;
+  font-size: 11px;
+  color: var(--subtle);
+  line-height: 1.8;
+}
+.timestamp-notes summary {
+  cursor: pointer;
+  color: var(--text);
+}
+.timestamp-notes p {
+  margin: 12px 0 0;
+}
+@media (max-width: 1050px) {
+  .timestamp-converter {
+    padding: 20px 16px;
+  }
+  .timestamp-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .timestamp-clock-card {
+    padding: 16px 14px 12px;
+  }
+}
+@media (max-width: 760px) {
+  .timestamp-live {
+    padding: 18px 16px;
+  }
+  .timestamp-live-heading {
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .timestamp-live-actions {
+    gap: 6px;
+  }
+  .timestamp-live-actions > span {
+    font-size: 10px;
+  }
+  .timestamp-clock-grid {
+    gap: 10px;
+  }
+  .timestamp-converters {
+    grid-template-columns: 1fr;
+  }
+  .timestamp-converter + .timestamp-converter {
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  .timestamp-section-heading {
+    flex-direction: row;
+    align-items: center;
+  }
+  .timestamp-converter .timestamp-input-help {
+    min-height: 0;
+  }
+  .timestamp-tabs .segmented {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+  }
+  .timestamp-tabs .segmented button {
+    flex: 1;
+    white-space: nowrap;
+    font-size: 10px;
+    padding: 9px 8px;
+  }
+  .timestamp-code,
+  .timestamp-notes {
+    padding: 16px;
+  }
+}
+@media (max-width: 480px) {
+  .timestamp-clock-grid {
+    grid-template-columns: 1fr;
+  }
+  .timestamp-clock-card {
+    padding: 12px 14px;
+  }
+  .timestamp-clock-card input {
+    font-size: 27px;
+  }
+  .timestamp-live-heading h2 {
+    font-size: 12px;
+  }
+  .timestamp-live-actions > span {
+    display: none;
+  }
+  .timestamp-zone-row select {
+    max-width: 220px;
+  }
+}
