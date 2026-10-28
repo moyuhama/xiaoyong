@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, shallowRef, watch } from "vue";
 import Icon from "./Icon.vue";
-import { useImagePaste } from "../lib/use-image-paste";
 import { downloadBlob, formatBytes } from "../lib/ui";
 import { cropGeometry, type CropRect } from "../lib/image-edit";
 const props = defineProps<{ toolId: string }>();
@@ -336,7 +335,6 @@ watch(
   { deep: true },
 );
 onUnmounted(dispose);
-useImagePaste(load, () => !busy.value && !loading.value);
 </script>
 <template>
   <div class="tool-workspace">
@@ -506,18 +504,6 @@ useImagePaste(load, () => !busy.value && !loading.value);
           </select></label
         >
       </div>
-      <div class="action-row">
-        <button
-          class="button primary"
-          :disabled="busy || !!cropError"
-          @click="generate"
-        >
-          {{ busy ? "正在生成…" : "生成图片"
-          }}<Icon name="ArrowRight" :size="16" /></button
-        ><button class="button secondary" :disabled="!output" @click="download">
-          <Icon name="Download" :size="16" />下载图片
-        </button>
-      </div>
       <div class="picture-previews">
         <section>
           <h2>{{ isCrop ? "原图与裁剪区域" : "原图" }}</h2>
@@ -570,6 +556,18 @@ useImagePaste(load, () => !busy.value && !loading.value);
             <p>点击“生成图片”查看结果</p>
           </div>
         </section>
+      </div>
+      <div class="action-row">
+        <button
+          class="button primary"
+          :disabled="busy || !!cropError"
+          @click="generate"
+        >
+          {{ busy ? "正在生成…" : "生成图片"
+          }}<Icon name="ArrowRight" :size="16" /></button
+        ><button class="button secondary" :disabled="!output" @click="download">
+          <Icon name="Download" :size="16" />下载图片
+        </button>
       </div>
     </template>
     <p v-if="error || cropError" role="alert" class="error-message">

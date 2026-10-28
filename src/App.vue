@@ -2,15 +2,13 @@
 import {
   computed,
   defineAsyncComponent,
+  nextTick,
   onMounted,
   onUnmounted,
   ref,
   watch,
 } from "vue";
 import Icon from "./components/Icon.vue";
-import ToolCard from "./components/ToolCard.vue";
-import ToolSearch from "./components/ToolSearch.vue";
-import { commonTools, toolGroups, prioritizeTools } from "./lib/catalog";
 import { categories, tools, searchTools } from "./lib/tools";
 import { toast } from "./lib/ui";
 
@@ -76,15 +74,6 @@ const extraModules = {
 const route = ref(location.hash.slice(1) || "/");
 const query = ref("");
 const searchInput = ref<HTMLInputElement>();
-const searchDialog = ref<InstanceType<typeof ToolSearch>>();
-const focused = ref(false);
-const sidebarTools = computed(() =>
-  currentTool.value
-    ? prioritizeTools(
-        tools.filter((t) => t.category === currentTool.value?.category),
-      )
-    : commonTools,
-);
 const mobileOpen = ref(false);
 const mobileQuery = window.matchMedia("(max-width: 760px)");
 const isMobile = ref(mobileQuery.matches);
@@ -138,8 +127,6 @@ function navigate(path: string) {
 }
 function handleRoute() {
   route.value = location.hash.slice(1) || "/";
-  mobileOpen.value = false;
-  searchDialog.value?.close();
   window.scrollTo({ top: 0 });
 }
 function toggleTheme() {
@@ -149,9 +136,13 @@ function toggleTheme() {
     localStorage.setItem("xiaoyong-theme", theme.value);
   } catch {}
 }
-function focusSearch() {
-  mobileOpen.value = false;
-  searchDialog.value?.open();
+async function focusSearch() {
+  if (isToolRoute.value) {
+    navigate("/");
+    handleRoute();
+  }
+  await nextTick();
+  searchInput.value?.focus();
 }
 function keydown(event: KeyboardEvent) {
   const target = event.target as HTMLElement;
@@ -162,9 +153,7 @@ function keydown(event: KeyboardEvent) {
   if (
     event.key === "/" &&
     !["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) &&
-    !about.value?.open &&
-    !target.isContentEditable &&
-    !document.querySelector("dialog[open]")
+    !about.value?.open
   ) {
     event.preventDefault();
     focusSearch();
@@ -206,36 +195,22 @@ onUnmounted(() => {
     :inert="isMobile && !mobileOpen"
     :class="{ 'is-open': mobileOpen }"
   >
-    <button
-      class="icon-button sidebar-close mobile-menu"
-      aria-label="关闭菜单"
-      @click="mobileOpen = false"
-    >
-      <Icon name="X" :size="19" />
-    </button>
     <a href="#/" class="brand" @click.prevent="navigate('/')">
       <span class="brand-mark"
         ><Icon name="BriefcaseBusiness" :size="25"
       /></span>
       <span
         ><strong>小用<span class="brand-dot">.</span></strong
-        ><small>日常与开发工具箱</small></span
+        ><small>让每件小事更简单</small></span
       >
     </a>
-    <button class="sidebar-search" @click="focusSearch">
-      <Icon name="Search" :size="17" /><span>搜索工具</span><kbd>⌘ K</kbd>
-    </button>
-    <div class="nav-section-label">工具分类</div>
+    <div class="nav-section-label">工作台 <span>WORKSPACE</span></div>
     <nav aria-label="工具分类" class="main-nav">
       <a
         v-for="category in categories"
         :key="category.id"
         :href="category.id === 'all' ? '#/' : '#/category/' + category.id"
-        :class="{
-          active: currentTool
-            ? currentTool.category === category.id
-            : view === category.id,
-        }"
+        :class="{ active: !isToolRoute && view === category.id }"
         :aria-current="
           !isToolRoute && view === category.id ? 'page' : undefined
         "
@@ -251,22 +226,6 @@ onUnmounted(() => {
         }}</small>
       </a>
     </nav>
-    <div class="sidebar-tool-section">
-      <div class="nav-section-label">
-        {{ currentTool ? categoryName : "常用工具" }}
-      </div>
-      <nav class="sidebar-tools" aria-label="快捷工具">
-        <a
-          v-for="tool in sidebarTools"
-          :key="tool.id"
-          :href="'#/tool/' + tool.id"
-          :class="{ active: currentTool?.id === tool.id }"
-          :aria-current="currentTool?.id === tool.id ? 'page' : undefined"
-          @click.prevent="navigate('/tool/' + tool.id)"
-          ><Icon :name="tool.icon" :size="16" />{{ tool.name }}</a
-        >
-      </nav>
-    </div>
     <div class="sidebar-bottom">
       <button class="sidebar-about" @click="about?.showModal()">
         <Icon name="CircleHelp" :size="17" />关于小用<span>v1.0</span>
@@ -274,11 +233,7 @@ onUnmounted(() => {
     </div>
   </aside>
 
-  <div
-    class="main-shell"
-    :inert="isMobile && mobileOpen"
-    :class="{ 'focus-mode': focused && isToolRoute }"
-  >
+  <div class="main-shell">
     <header class="topbar">
       <div class="breadcrumb">
         <button
@@ -299,9 +254,6 @@ onUnmounted(() => {
           ></template
         >
       </div>
-      <button class="top-search" @click="focusSearch">
-        <Icon name="Search" :size="17" /><span>搜索全部工具</span><kbd>⌘ K</kbd>
-      </button>
       <div class="top-actions">
         <button
           class="icon-button"
@@ -326,116 +278,119 @@ onUnmounted(() => {
         /></a>
       </div>
     </header>
-    <main id="main-content" tabindex="-1" :class="{ 'tool-page': isToolRoute }">
+    <main id="main-content" tabindex="-1">
       <template v-if="!isToolRoute">
-        <section class="catalog-intro">
-          <div>
-            <span class="catalog-kicker"
-              >小用工具箱 <span>/ {{ tools.length }} TOOLS</span></span
-            >
-            <h1>{{ view === "all" ? "需要什么工具？" : title }}</h1>
+        <section v-if="view === 'all'" class="hero">
+          <div class="hero-copy">
+            <span class="eyebrow"><span></span> 小工具，大帮手</span>
+            <h1>
+              把小事，<span>轻松搞定。</span
+              ><svg viewBox="0 0 220 12" aria-hidden="true">
+                <path d="M3 8 Q110 -1 216 6" />
+              </svg>
+            </h1>
             <p>
-              {{
-                view === "all"
-                  ? "图片、文档、文本与开发，按需找到，打开即用。"
-                  : "选择工具，开始处理。"
-              }}
+              从日常琐事到开发细节，顺手的工具都在这里。<br
+                class="hero-break"
+              />无需安装，即开即用，把时间留给更重要的事。
             </p>
           </div>
-          <div class="search-box catalog-search">
-            <Icon name="Search" :size="21" /><input
-              ref="searchInput"
-              v-model="query"
-              type="search"
-              aria-label="搜索工具"
-              placeholder="搜索名称或用途，如 压缩、JSON…"
-              @keydown.enter="
-                filtered[0] && navigate('/tool/' + filtered[0].id)
+          <div class="hero-art" aria-hidden="true">
+            <div class="art-orbit orbit-one"></div>
+            <div class="art-orbit orbit-two"></div>
+            <span class="art-spark spark-one">✳</span
+            ><span class="art-dot"></span>
+            <div class="art-tile art-code">
+              <span>{ }</span><small>make it simple</small>
+            </div>
+            <div class="art-tile art-text">
+              <span>Aa<span>.</span></span>
+              <div class="art-lines"><i></i><i></i></div>
+            </div>
+            <div class="art-tile art-image">
+              <Icon name="Image" :size="40" :stroke-width="1.4" /><span
+                class="image-sun"
+              ></span>
+            </div>
+            <div class="art-tile art-color"><i></i><i></i><i></i></div>
+            <span class="art-spark spark-two">✧</span>
+          </div>
+        </section>
+        <section v-else class="collection-heading">
+          <span class="eyebrow">你的效率工作台</span>
+          <h1>{{ title }}</h1>
+          <p>少一点繁琐，多一点得心应手。</p>
+        </section>
+        <div class="search-box">
+          <Icon name="Search" :size="21" /><input
+            ref="searchInput"
+            v-model="query"
+            type="search"
+            aria-label="搜索工具"
+            placeholder="搜索你需要的工具，比如「图片压缩」"
+          /><button
+            v-if="query"
+            class="icon-button"
+            aria-label="清空搜索"
+            @click="query = ''"
+          >
+            <Icon name="X" :size="17" /></button
+          ><kbd v-else>⌘ K</kbd>
+        </div>
+        <div class="catalog-toolbar">
+          <div class="category-tabs" aria-label="筛选分类">
+            <button
+              v-for="category in categories"
+              :key="category.id"
+              :class="{ selected: view === category.id }"
+              @click="
+                navigate(
+                  category.id === 'all' ? '/' : '/category/' + category.id,
+                )
               "
-            /><button
-              v-if="query"
-              class="icon-button"
-              aria-label="清空搜索"
-              @click="query = ''"
             >
-              <Icon name="X" :size="17" /></button
-            ><kbd v-else>Enter</kbd>
+              {{ category.name }}
+            </button>
           </div>
-        </section>
-        <nav class="catalog-category-bar" aria-label="筛选分类">
-          <button
-            v-for="category in categories"
-            :key="category.id"
-            :class="{ selected: view === category.id }"
-            :aria-pressed="view === category.id"
-            @click="
-              navigate(category.id === 'all' ? '/' : '/category/' + category.id)
-            "
+        </div>
+        <div class="section-title">
+          <h2>
+            {{ query ? "搜索结果" : title
+            }}<span v-if="view === 'all' && !query"
+              >为每一个小需求，找到好帮手</span
+            >
+          </h2>
+          <span class="section-hint">{{ filtered.length }} 个工具</span>
+        </div>
+        <div v-if="filtered.length" class="tool-grid">
+          <article
+            v-for="(tool, index) in filtered"
+            :key="tool.id"
+            class="tool-card"
+            :style="{ '--card-delay': Math.min(index, 5) * 35 + 'ms' }"
           >
-            <Icon :name="category.icon" :size="16" />{{ category.name
-            }}<small>{{
-              category.id === "all"
-                ? tools.length
-                : tools.filter((t) => t.category === category.id).length
-            }}</small>
-          </button>
-        </nav>
-        <template v-if="!query.trim() && view === 'all'">
-          <section class="catalog-section common-section" aria-label="常用工具">
-            <div class="catalog-section-heading">
-              <h2><Icon name="Zap" :size="19" />常用工具</h2>
-              <span>快速开始</span>
-            </div>
-            <div class="common-grid">
-              <ToolCard
-                v-for="tool in commonTools"
-                :key="tool.id"
-                :tool="tool"
-                compact
-                @open="navigate('/tool/' + $event)"
-              />
-            </div>
-          </section>
-          <section
-            v-for="group in toolGroups"
-            :key="group.id"
-            class="catalog-section"
-          >
-            <div class="catalog-section-heading">
-              <h2>
-                <Icon :name="group.icon" :size="19" />{{ group.name
-                }}<small>{{ group.tools.length }}</small>
-              </h2>
-              <a
-                :href="'#/category/' + group.id"
-                @click.prevent="navigate('/category/' + group.id)"
-                >查看分类<Icon name="ChevronRight" :size="15"
-              /></a>
-            </div>
-            <div class="catalog-grid">
-              <ToolCard
-                v-for="tool in group.tools"
-                :key="tool.id"
-                :tool="tool"
-                @open="navigate('/tool/' + $event)"
-              />
-            </div>
-          </section>
-        </template>
-        <section v-else-if="filtered.length" class="catalog-section">
-          <div class="catalog-section-heading">
-            <h2>{{ query.trim() ? "搜索结果" : title }}</h2>
-            <span>{{ filtered.length }} 个工具</span>
-          </div>
-          <div class="catalog-grid">
-            <ToolCard
-              v-for="tool in filtered"
-              :key="tool.id"
-              :tool="tool"
-              @open="navigate('/tool/' + $event)"
-            />
-          </div>
-        </section>
+            <a
+              class="tool-card-link"
+              :href="'#/tool/' + tool.id"
+              @click.prevent="navigate('/tool/' + tool.id)"
+              ><span class="tool-icon" :class="tool.color"
+                ><Icon :name="tool.icon" :size="25"
+              /></span>
+              <h3>
+                {{ tool.name
+                }}<span v-if="tool.badge" class="tool-badge">{{
+                  tool.badge
+                }}</span>
+              </h3>
+              <p>{{ tool.description }}</p>
+              <div class="card-bottom">
+                <span>{{
+                  categories.find((c) => c.id === tool.category)?.name
+                }}</span
+                ><Icon name="ArrowUpRight" :size="17" /></div
+            ></a>
+          </article>
+        </div>
         <div v-else class="empty-state">
           <span class="empty-icon"><Icon name="Search" :size="34" /></span>
           <h3>暂时没有找到这个工具</h3>
@@ -444,25 +399,24 @@ onUnmounted(() => {
             浏览全部工具<Icon name="ArrowRight" :size="16" />
           </button>
         </div>
+        <div class="bottom-note">
+          <span><Icon name="Leaf" :size="15" /> 简单一点，高效一点。</span>
+          <p>工具会持续更新，陪你把每件小事做好。</p>
+        </div>
       </template>
       <template v-else-if="currentTool">
+        <button class="back-button" @click="navigate('/')">
+          <Icon name="ArrowLeft" :size="17" />返回工具箱
+        </button>
         <div class="tool-heading">
           <span class="tool-icon large" :class="currentTool.color"
-            ><Icon :name="currentTool.icon" :size="25"
+            ><Icon :name="currentTool.icon" :size="30"
           /></span>
-          <div class="tool-heading-copy">
+          <div>
+            <span class="eyebrow">{{ categoryName }}</span>
             <h1>{{ currentTool.name }}</h1>
             <p>{{ currentTool.description }}</p>
           </div>
-          <button
-            class="button secondary focus-toggle"
-            :aria-pressed="focused"
-            @click="focused = !focused"
-          >
-            <Icon :name="focused ? 'Minimize2' : 'Maximize2'" :size="16" />{{
-              focused ? "退出宽屏" : "宽屏模式"
-            }}
-          </button>
         </div>
         <Suspense
           ><component
@@ -475,9 +429,9 @@ onUnmounted(() => {
             </div></template
           ></Suspense
         >
-        <p class="tool-note">关闭或切换工具前，请复制或下载需要保留的结果。</p>
+        <p class="tool-note">离开工具页面后，输入内容将被清空。</p>
         <section class="related-section">
-          <h2>相关工具</h2>
+          <h2>也许你还用得上</h2>
           <div class="related-tools">
             <a
               v-for="tool in tools
@@ -506,11 +460,12 @@ onUnmounted(() => {
       </div>
     </main>
     <footer class="footer">
-      <span>小用<span class="footer-dot">.</span> <i>日常与开发工具箱</i></span>
+      <span
+        >小用<span class="footer-dot">.</span> <i>用心做好每一个小工具</i></span
+      >
       <button @click="about?.showModal()">关于与隐私</button>
     </footer>
   </div>
-  <ToolSearch ref="searchDialog" @choose="navigate('/tool/' + $event)" />
   <Transition name="toast"
     ><div v-if="toast" role="status" class="toast-message">
       <Icon name="Check" :size="17" />{{ toast }}

@@ -55,15 +55,7 @@
 
 时间戳转换已前置到首页，保留原有 `#/tool/datetime` 链接：实时秒 / 毫秒显示、暂停 / 继续、单独复制、双向转换、自动识别单位、北京时间 / UTC / 其他常用时区、批量转换、日期差以及 JavaScript / Python / Java / Go 示例代码。功能方向参考 [Tool.lu 时间戳工具](https://tool.lu/timestamp/)，沿用小用的界面设计。
 
-界面与交互采用统一工作区：
-
-- 首页按五类展示全部 70 个工具，12 个常用入口前置；侧栏可直接打开同类工具。
-- Ctrl / Command + K 或 `/` 打开搜索弹窗，支持上下键选择与 Enter 打开；关闭搜索保留当前工具输入。
-- 工具页支持宽屏、深色模式与手机布局。主要操作紧邻输入或预览，复制和下载使用文字按钮。
-- 共用文本编辑区采用 [CodeMirror 6](https://github.com/codemirror/dev)（MIT）：行号、撤销 / 重做、查找 / 替换、自动换行、JSON 高亮与折叠；支持导入不超过 2 MB 的 UTF-8 文本文件。超过 200,000 字符时关闭 JSON 语法分析，保留编辑与转换。
-- JSON 支持 Ctrl / Command + Enter 格式化，改变缩进立即更新已格式化结果。图片压缩、格式转换、裁剪、水印与证件照支持粘贴截图（输入框编辑期间保持正常粘贴行为）。
-
-本轮参考 [Tool.lu JSON 工具](https://tool.lu/json/)的编辑与结果展示方式，以及[懒人工具](https://www.lanren-tools.com/)的分类目录结构；保留小用的品牌与功能实现。
+支持分类搜索、深色模式、手机布局与键盘搜索（Ctrl / Command + K）。
 
 前期调研参考 [IT-Tools](https://github.com/CorentinTh/it-tools) 与 [OmniTools](https://github.com/iib0011/omni-tools) 的工具分类。本轮参考 [懒人工具](https://www.lanren-tools.com/) 的图片与 PDF 目录，以及 Tool.lu 的[图片拼图](https://tool.lu/collage/)、[证件照排版](https://tool.lu/imageprint/)、[图片转 PDF](https://tool.lu/image2pdf/)、[SQL](https://tool.lu/sql/)、[ICO](https://tool.lu/favicon/)和[拼音](https://tool.lu/py5bconvert/)工具；通过 [67 工具的数字类页面公开索引](https://www.67tool.com/number/hex-to-binary)核对随机数、金额大写需求（其首页限制自动访问）。参考功能方向，按小用现有界面独立实现，不复制这些网站的页面、品牌或源码。
 

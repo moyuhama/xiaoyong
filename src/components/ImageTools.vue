@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
 import Icon from "./Icon.vue";
-import { useImagePaste } from "../lib/use-image-paste";
 import { downloadBlob, formatBytes, notify } from "../lib/ui";
 const props = defineProps<{ toolId: string }>();
 const fileInput = ref<HTMLInputElement>();
@@ -174,7 +173,6 @@ function drop(event: DragEvent) {
   loadFile(files?.[0]);
 }
 onUnmounted(clear);
-useImagePaste(loadFile, () => !busy.value && !loading.value);
 </script>
 <template>
   <div class="tool-workspace image-workspace">
@@ -204,7 +202,7 @@ useImagePaste(loadFile, () => !busy.value && !loading.value);
           ><Icon name="Plus" :size="16" /></span
       ></span>
       <h2>{{ loading ? "正在读取图片…" : "把图片放到这里" }}</h2>
-      <p>拖拽图片，或<span>点击选择文件</span>，也可 Ctrl / ⌘ V 粘贴截图</p>
+      <p>拖拽图片到此处，或<span>点击选择文件</span></p>
       <small>支持 JPG、PNG、WebP 静态图片 · 单张最大 20 MB</small>
     </button>
     <template v-else>
@@ -269,29 +267,6 @@ useImagePaste(loadFile, () => !busy.value && !loading.value);
             :disabled="busy"
         /></label>
       </div>
-      <div class="action-row">
-        <button class="button primary" :disabled="busy" @click="processImage">
-          <Icon
-            :name="busy ? 'LoaderCircle' : 'SlidersHorizontal'"
-            :size="17"
-            :class="{ spin: busy }"
-          />{{
-            busy
-              ? "正在处理"
-              : toolId === "image-compress"
-                ? "开始压缩"
-                : "转换图片"
-          }}</button
-        ><button
-          class="button secondary"
-          :disabled="!output || busy"
-          @click="output && downloadBlob(output, outputName)"
-        >
-          <Icon name="Download" :size="17" />下载图片</button
-        ><button class="text-button" :disabled="busy" @click="clear">
-          清除图片
-        </button>
-      </div>
       <div class="image-comparison">
         <section>
           <div class="panel-heading">
@@ -322,6 +297,29 @@ useImagePaste(loadFile, () => !busy.value && !loading.value);
             </div>
           </div>
         </section>
+      </div>
+      <div class="action-row">
+        <button class="button primary" :disabled="busy" @click="processImage">
+          <Icon
+            :name="busy ? 'LoaderCircle' : 'SlidersHorizontal'"
+            :size="17"
+            :class="{ spin: busy }"
+          />{{
+            busy
+              ? "正在处理"
+              : toolId === "image-compress"
+                ? "开始压缩"
+                : "转换图片"
+          }}</button
+        ><button
+          class="button secondary"
+          :disabled="!output || busy"
+          @click="output && downloadBlob(output, outputName)"
+        >
+          <Icon name="Download" :size="17" />下载图片</button
+        ><button class="text-button" :disabled="busy" @click="clear">
+          清除图片
+        </button>
       </div>
     </template>
     <div v-if="error" role="alert" class="error-message">{{ error }}</div>

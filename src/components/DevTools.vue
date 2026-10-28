@@ -84,7 +84,7 @@ function example() {
   jsonDone.value = false;
   if (props.toolId === "json")
     input.value =
-      '{"name":"小用工具箱","version":1,"features":["格式化","压缩","转义"],"simple":true}';
+      '{"name":"小用工具箱","version":1,"features":["本地处理","免费使用"],"simple":true}';
   if (props.toolId === "encoding")
     input.value = decode.value
       ? encodingMode.value === "base64"
@@ -161,20 +161,12 @@ function generate() {
     error.value = err instanceof Error ? err.message : "无法生成，请检查选项";
   }
 }
-watch([input, jsonQuotes], () => {
+watch([input, indent, jsonQuotes], () => {
   if (props.toolId === "json") {
     result.value = "";
     error.value = "";
     jsonDone.value = false;
   }
-});
-watch(indent, () => {
-  if (
-    props.toolId === "json" &&
-    jsonDone.value &&
-    jsonAction.value === "format"
-  )
-    runJson("format");
 });
 watch(
   [generatorMode, length, count, groups],
@@ -197,12 +189,7 @@ watch([pattern, flags, input], () => {
 onUnmounted(cancelRegex);
 </script>
 <template>
-  <div
-    class="tool-workspace"
-    :class="{ 'json-workspace': toolId === 'json' }"
-    @keydown.ctrl.enter.prevent="toolId === 'json' && runJson('format')"
-    @keydown.meta.enter.prevent="toolId === 'json' && runJson('format')"
-  >
+  <div class="tool-workspace">
     <template v-if="toolId === 'generator'">
       <div class="tool-toolbar">
         <div class="segmented">
@@ -374,25 +361,40 @@ onUnmounted(cancelRegex);
       </div>
     </template>
     <template v-else>
-      <div v-if="toolId !== 'json'" class="tool-toolbar">
+      <div class="tool-toolbar">
         <div class="toolbar-options">
-          <div class="segmented">
-            <button
-              :class="{ active: encodingMode === 'base64' }"
-              @click="encodingMode = 'base64'"
-            >
-              Base64</button
-            ><button
-              :class="{ active: encodingMode === 'url' }"
-              @click="encodingMode = 'url'"
-            >
-              URL
-            </button>
-          </div>
-          <select v-model="decode" aria-label="编码操作">
-            <option :value="false">编码</option>
-            <option :value="true">解码</option>
-          </select>
+          <template v-if="toolId === 'json'"
+            ><label class="inline-label"
+              >缩进<select v-model="indent" aria-label="JSON 缩进">
+                <option value="2">2 个空格</option>
+                <option value="4">4 个空格</option>
+                <option value="tab">Tab</option>
+              </select></label
+            ><label class="check-label"
+              ><input
+                v-model="jsonQuotes"
+                type="checkbox"
+              />转义时保留外层双引号</label
+            ></template
+          ><template v-else
+            ><div class="segmented">
+              <button
+                :class="{ active: encodingMode === 'base64' }"
+                @click="encodingMode = 'base64'"
+              >
+                Base64</button
+              ><button
+                :class="{ active: encodingMode === 'url' }"
+                @click="encodingMode = 'url'"
+              >
+                URL
+              </button>
+            </div>
+            <select v-model="decode" aria-label="编码操作">
+              <option :value="false">编码</option>
+              <option :value="true">解码</option>
+            </select></template
+          >
         </div>
         <div class="toolbar-actions">
           <button class="text-button" @click="example">填入示例</button
@@ -410,37 +412,24 @@ onUnmounted(cancelRegex);
           </button>
         </div>
       </div>
-      <div v-if="toolId === 'json'" class="json-commandbar">
-        <div class="json-primary-actions">
-          <button
-            class="button primary"
-            title="Ctrl / ⌘ + Enter"
-            @click="runJson('format')"
-          >
-            <Icon name="Braces" :size="17" />格式化校验
-          </button>
-          <button class="button secondary" @click="runJson('minify')">
-            压缩
-          </button>
-          <button class="button secondary" @click="runJson('escape')">
-            转义
-          </button>
-          <button class="button secondary" @click="runJson('unescape')">
-            去除转义
-          </button>
-        </div>
-        <div class="json-secondary-actions">
-          <label class="inline-label"
-            >缩进<select v-model="indent" aria-label="JSON 缩进">
-              <option value="2">2 空格</option>
-              <option value="4">4 空格</option>
-              <option value="tab">Tab</option>
-            </select></label
-          ><button class="text-button" @click="example">填入示例</button>
-        </div>
-      </div>
-      <div v-if="toolId === 'json' && error" role="alert" class="error-message">
-        {{ error }}
+      <div
+        v-if="toolId === 'json'"
+        class="action-row json-actions"
+        role="group"
+        aria-label="JSON 操作"
+      >
+        <button class="button primary" @click="runJson('format')">
+          <Icon name="Braces" :size="17" />格式化校验
+        </button>
+        <button class="button secondary" @click="runJson('minify')">
+          压缩
+        </button>
+        <button class="button secondary" @click="runJson('escape')">
+          转义
+        </button>
+        <button class="button secondary" @click="runJson('unescape')">
+          去除转义
+        </button>
       </div>
       <div class="editor-grid">
         <EditorPanel
@@ -473,33 +462,16 @@ onUnmounted(cancelRegex);
           结果用作输入
         </button>
       </div>
-      <div v-if="toolId !== 'json'" class="workspace-footnote">
-        <Icon name="Info" :size="15" />支持中文与 emoji。URL 模式按 URI
-        组件转换；Base64 是编码方式，不是加密。
+      <div class="workspace-footnote">
+        <Icon name="Info" :size="15" />{{
+          toolId === "json"
+            ? "转义可选保留外层双引号；去除转义每次还原一层。格式化与压缩使用标准 JSON 解析，大整数编号请用字符串表示。"
+            : "支持中文与 emoji。URL 模式按 URI 组件转换；Base64 是编码方式，不是加密。"
+        }}
       </div>
-      <details v-if="toolId === 'json'" class="workspace-help">
-        <summary>
-          转义选项与使用说明 <span>Ctrl / ⌘ + Enter 格式化</span>
-        </summary>
-        <div>
-          <label class="check-label"
-            ><input
-              v-model="jsonQuotes"
-              type="checkbox"
-            />转义时保留外层双引号</label
-          >
-          <p>
-            点击行号旁的箭头可折叠
-            JSON。查找支持正则表达式；去除转义每次还原一层。大整数编号请使用字符串，避免标准
-            JSON 解析损失精度。
-          </p>
-        </div>
-      </details>
     </template>
     <div
-      v-if="
-        toolId !== 'json' && (error || (toolId === 'encoding' && encoded.error))
-      "
+      v-if="error || (toolId === 'encoding' && encoded.error)"
       role="alert"
       class="error-message"
     >

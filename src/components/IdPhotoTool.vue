@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, shallowRef, watch } from "vue";
 import Icon from "./Icon.vue";
-import { useImagePaste } from "../lib/use-image-paste";
 import { downloadBlob, formatBytes } from "../lib/ui";
 import { useWorkerTask } from "../lib/worker-task";
 import {
@@ -479,7 +478,6 @@ onUnmounted(() => {
   clearCanvas(source);
   clearCanvas(cutout);
 });
-useImagePaste(load, () => !busy.value);
 </script>
 <template>
   <div class="tool-workspace id-photo-workspace">

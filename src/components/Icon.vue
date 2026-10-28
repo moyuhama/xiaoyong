@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import {
-  Undo2,
-  Redo2,
-  Maximize2,
-  Minimize2,
-  Zap,
   ContactRound,
   RotateCw,
   Files,
@@ -81,11 +76,6 @@ const props = withDefaults(
   { size: 20, strokeWidth: 1.8 },
 );
 const icons: Record<string, any> = {
-  Undo2,
-  Redo2,
-  Maximize2,
-  Minimize2,
-  Zap,
   ContactRound,
   RotateCw,
   Files,
