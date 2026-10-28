@@ -6,5 +6,6 @@ import "./expanded-tools.css";
 import "./id-photo.css";
 import "./workshop.css";
 import "./timestamp.css";
+import "./workspace.css";
 
 createApp(App).mount("#app");
