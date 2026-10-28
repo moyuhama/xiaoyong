@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import Icon from "./Icon.vue";
 import EditorPanel from "./EditorPanel.vue";
-import { copy } from "../lib/ui";
+import { copy, downloadText } from "../lib/ui";
 import { worldCities } from "../lib/time-tools";
 import {
   readTimestamp,
@@ -17,6 +17,11 @@ const now = ref(Date.now()),
   paused = ref(false),
   timezone = ref("Asia/Shanghai"),
   tab = ref("convert");
+const liveUnit = ref<"seconds" | "milliseconds">("seconds");
+const stampZone = ref("Asia/Shanghai"),
+  dateZone = ref("Asia/Shanghai"),
+  batchZone = ref("Asia/Shanghai");
+const outputUnit = ref<"seconds" | "milliseconds">("seconds");
 const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 const zone = computed(() =>
   timezone.value === "local" ? deviceZone : timezone.value,
@@ -28,6 +33,22 @@ const zones = [
   { name: "当前设备 · " + deviceZone, zone: "local" },
   ...worldCities.filter((c) => !["Asia/Shanghai", "UTC"].includes(c.zone)),
 ];
+const zoneChoices = Array.from(
+  new Set([
+    "Asia/Shanghai",
+    "UTC",
+    deviceZone,
+    ...zones.filter((item) => item.zone !== "local").map((item) => item.zone),
+    ...Intl.supportedValuesOf("timeZone"),
+  ]),
+);
+const currentValue = computed(() => clock.value[liveUnit.value]);
+function fillLive() {
+  inputUnit.value = liveUnit.value;
+  inputStamp.value = currentValue.value;
+  tab.value = "convert";
+  convertStamp();
+}
 let timer: ReturnType<typeof setInterval> | undefined;
 function tick() {
   if (!paused.value) now.value = Date.now();
@@ -48,12 +69,11 @@ onUnmounted(() => {
 
 const inputStamp = ref(String(Math.floor(now.value / 1000))),
   inputDate = ref(clock.value.dateTime);
-const inputUnit = ref<TimestampUnit>("auto");
+const inputUnit = ref<TimestampUnit>("seconds");
 type Details = ReturnType<typeof timestampDetails>;
-const stampResult = ref<Details | null>(
-  timestampDetails(Math.floor(now.value / 1000) * 1000, zone.value),
-);
-const dateResult = ref<Details | null>(clock.value);
+const stampResult = ref<Details | null>(null);
+const dateResult = ref<Details | null>(null);
+const dateOutput = computed(() => dateResult.value?.[outputUnit.value] || "");
 const stampError = ref(""),
   dateError = ref(""),
   resolvedUnit = ref("seconds");
@@ -63,7 +83,7 @@ function convertStamp() {
   try {
     const result = readTimestamp(inputStamp.value, inputUnit.value);
     resolvedUnit.value = result.unit;
-    stampResult.value = timestampDetails(result.milliseconds, zone.value);
+    stampResult.value = timestampDetails(result.milliseconds, stampZone.value);
   } catch (e) {
     stampError.value = e instanceof Error ? e.message : "转换失败";
   }
@@ -73,8 +93,8 @@ function convertDate() {
   dateError.value = "";
   try {
     dateResult.value = timestampDetails(
-      readDateTime(inputDate.value, zone.value),
-      zone.value,
+      readDateTime(inputDate.value, dateZone.value),
+      dateZone.value,
     );
   } catch (e) {
     dateError.value = e instanceof Error ? e.message : "转换失败";
@@ -88,7 +108,7 @@ function useCurrentStamp() {
   convertStamp();
 }
 function useCurrentDate() {
-  inputDate.value = clock.value.dateTime;
+  inputDate.value = timestampDetails(now.value, dateZone.value).dateTime;
   convertDate();
 }
 watch(
@@ -107,9 +127,11 @@ watch(
   },
   { flush: "sync" },
 );
-watch(zone, () => {
-  if (inputStamp.value.trim()) convertStamp();
-  if (inputDate.value.trim()) convertDate();
+watch(stampZone, () => {
+  if (stampResult.value) convertStamp();
+});
+watch(dateZone, () => {
+  if (dateResult.value) convertDate();
 });
 
 const batchInput = ref(""),
@@ -129,7 +151,7 @@ function clearBatch() {
   batchRows.value = [];
   batchError.value = "";
 }
-watch([batchInput, batchDirection, batchUnit, zone], clearBatch, {
+watch([batchInput, batchDirection, batchUnit, batchZone], clearBatch, {
   flush: "sync",
 });
 watch(batchDirection, () => {
@@ -143,7 +165,7 @@ function runBatch() {
       batchInput.value,
       batchDirection.value,
       batchUnit.value,
-      zone.value,
+      batchZone.value,
     );
   } catch (e) {
     batchError.value = e instanceof Error ? e.message : "转换失败";
@@ -157,7 +179,8 @@ function batchExample() {
         : batchUnit.value === "seconds"
           ? "0\n1735689600\n" + clock.value.seconds
           : "0\n1735689600\n1735689600123"
-      : "2025-01-01 08:00:00\n2025-01-01T00:00:00Z\n" + clock.value.dateTime;
+      : "2025-01-01 08:00:00\n2025-01-01T00:00:00Z\n" +
+        timestampDetails(now.value, batchZone.value).dateTime;
 }
 const dayStart = ref(""),
   dayEnd = ref("");
@@ -199,246 +222,200 @@ const snippet = computed(() =>
 
 <template>
   <div class="tool-workspace timestamp-workspace">
-    <section class="timestamp-live" aria-label="当前时间戳">
-      <div class="timestamp-live-heading">
-        <h2>
-          <span class="timestamp-dot" :class="{ paused }"></span>当前时间戳
-        </h2>
-        <div class="timestamp-live-actions">
-          <span>{{ paused ? "已暂停 · 数值已固定" : "实时 · 每秒更新" }}</span>
-          <button class="button secondary" @click="toggleClock">
-            <Icon :name="paused ? 'Play' : 'Pause'" :size="14" />{{
-              paused ? "继续" : "暂停"
-            }}
-          </button>
-        </div>
-      </div>
-      <div class="timestamp-clock-grid">
-        <div class="timestamp-clock-card">
-          <label for="current-seconds">Unix 时间戳 · 秒</label>
-          <input
-            id="current-seconds"
-            :value="clock.seconds"
-            readonly
-            aria-label="当前秒级时间戳"
-          />
+    <section class="unix-live" aria-label="当前时间戳">
+      <div class="unix-live-value">
+        <span>当前时间戳</span>
+        <div>
           <button
-            class="text-button"
-            @click="copy(clock.seconds)"
-            aria-label="复制当前秒级时间戳"
+            class="unix-number"
+            title="填入转换输入"
+            @click="fillLive"
+            aria-label="将当前时间戳填入转换输入"
           >
-            <Icon name="Copy" :size="14" />复制秒
-          </button>
+            {{ currentValue }}</button
+          ><span class="unix-unit">{{
+            liveUnit === "seconds" ? "秒" : "毫秒"
+          }}</span>
         </div>
-        <div class="timestamp-clock-card">
-          <label for="current-milliseconds">时间戳 · 毫秒</label>
-          <input
-            id="current-milliseconds"
-            :value="clock.milliseconds"
-            readonly
-            aria-label="当前毫秒级时间戳"
-          />
-          <button
-            class="text-button"
-            @click="copy(clock.milliseconds)"
-            aria-label="复制当前毫秒级时间戳"
-          >
-            <Icon name="Copy" :size="14" />复制毫秒
-          </button>
-        </div>
+        <time :datetime="clock.iso"
+          >{{ clock.date }} {{ clock.time }} · 北京时间</time
+        >
       </div>
-      <div class="timestamp-clock-date">
-        <time :datetime="clock.iso">{{ clock.date }} {{ clock.time }}</time>
-        <span>{{ clock.offset }}</span>
+      <div class="unix-live-buttons">
         <button
-          class="icon-button"
-          aria-label="复制当前日期时间"
-          @click="copy(clock.dateTime)"
+          class="button secondary"
+          @click="
+            liveUnit = liveUnit === 'seconds' ? 'milliseconds' : 'seconds'
+          "
         >
-          <Icon name="Copy" :size="15" />
+          切换单位
         </button>
-      </div>
-      <div class="timestamp-zone-row">
-        <label class="inline-label"
-          >时区<select v-model="timezone">
-            <option v-for="item in zones" :key="item.zone" :value="item.zone">
-              {{ item.name }}
-            </option>
-          </select></label
+        <button class="button secondary" @click="copy(currentValue)">
+          <Icon name="Copy" :size="15" />复制
+        </button>
+        <button
+          class="button secondary"
+          :aria-pressed="paused"
+          @click="toggleClock"
         >
-        <span class="muted">{{ zone }} · 时区改变日期显示，时间戳不变</span>
+          <Icon :name="paused ? 'Play' : 'Pause'" :size="15" />{{
+            paused ? "继续" : "暂停"
+          }}
+        </button>
       </div>
     </section>
-
-    <div class="tool-toolbar timestamp-tabs">
-      <div class="segmented" aria-label="时间工具功能">
-        <button
-          v-for="item in [
-            ['convert', '双向转换'],
-            ['batch', '批量转换'],
-            ['difference', '日期差计算'],
-            ['code', '代码示例'],
-          ]"
-          :key="item[0]"
-          :class="{ active: tab === item[0] }"
-          :aria-pressed="tab === item[0]"
-          @click="tab = item[0]!"
-        >
-          {{ item[1] }}
-        </button>
-      </div>
+    <div class="unix-tabs" role="tablist" aria-label="时间戳操作">
+      <button
+        v-for="item in [
+          ['convert', '单个转换'],
+          ['batch', '批量转换'],
+        ]"
+        :key="item[0]"
+        role="tab"
+        :aria-selected="tab === item[0]"
+        :class="{ active: tab === item[0] }"
+        @click="tab = item[0]!"
+      >
+        {{ item[1] }}
+      </button>
     </div>
-
-    <div v-if="tab === 'convert'" class="timestamp-converters">
-      <section class="timestamp-converter" aria-label="时间戳转日期">
-        <div class="timestamp-section-heading">
-          <h2>时间戳 → 日期时间</h2>
-          <button class="text-button" @click="useCurrentStamp">
-            填入当前时间戳
-          </button>
-        </div>
-        <form @submit.prevent="convertStamp">
-          <label class="field-label"
+    <div v-if="tab === 'convert'" class="unix-convert">
+      <section class="unix-section" aria-label="时间戳转日期时间">
+        <h2><Icon name="Timer" :size="18" />时间戳转日期时间</h2>
+        <form class="unix-form unix-stamp-form" @submit.prevent="convertStamp">
+          <label class="unix-field"
             >时间戳<input
               v-model="inputStamp"
-              placeholder="粘贴秒或毫秒时间戳"
+              placeholder="输入时间戳"
               inputmode="numeric"
               autocomplete="off"
               maxlength="30"
+              aria-label="待转换时间戳"
           /></label>
-          <label class="field-label"
-            >输入单位<select v-model="inputUnit">
-              <option value="auto">自动识别 · 秒 / 毫秒</option>
+          <label class="unix-field"
+            >单位<select v-model="inputUnit" aria-label="输入时间戳单位">
               <option value="seconds">秒（s）</option>
               <option value="milliseconds">毫秒（ms）</option>
+              <option value="auto">自动识别</option>
             </select></label
           >
-          <div class="timestamp-form-actions">
-            <button class="button primary" type="submit">
-              转换为日期<Icon name="ArrowRight" :size="15" /></button
-            ><button
-              type="button"
-              class="text-button"
-              @click="inputStamp = ''"
-              aria-label="清空时间戳"
-            >
-              清空
-            </button>
-          </div>
+          <label class="unix-field"
+            >时区<select v-model="stampZone" aria-label="时间戳转换时区">
+              <option v-for="item in zoneChoices" :key="item" :value="item">
+                {{ item }}
+              </option>
+            </select></label
+          >
+          <button
+            type="button"
+            class="button secondary"
+            @click="useCurrentStamp"
+          >
+            填入当前
+          </button>
+          <button type="submit" class="button primary">转换</button>
         </form>
-        <p v-if="stampError" role="alert" class="error-message">
+        <p v-if="stampError" class="error-message" role="alert">
           {{ stampError }}
         </p>
-        <div
-          v-if="stampResult"
-          class="timestamp-result"
-          aria-label="日期转换结果"
+        <label class="unix-result-label" for="unix-date-result"
+          >转换结果
+          <span v-if="stampResult"
+            >{{ stampResult.offset
+            }}{{
+              inputUnit === "auto"
+                ? " · 已识别为" + (resolvedUnit === "seconds" ? "秒" : "毫秒")
+                : ""
+            }}</span
+          ></label
         >
-          <div class="timestamp-result-heading">
-            <span
-              >{{ inputUnit === "auto" ? "已识别为" : "按"
-              }}{{ resolvedUnit === "seconds" ? "秒" : "毫秒" }}</span
-            ><span>{{ stampResult.offset }}</span>
-          </div>
-          <label class="field-label"
-            >所选时区日期<span class="timestamp-copy-value"
-              ><input
-                :value="stampResult.dateTime"
-                aria-label="所选时区日期"
-                readonly /><button
-                class="icon-button"
-                aria-label="复制日期结果"
-                @click="copy(stampResult.dateTime)"
-              >
-                <Icon name="Copy" :size="15" /></button></span
-          ></label>
-          <label class="field-label"
-            >UTC · ISO 8601<span class="timestamp-copy-value"
-              ><input
-                :value="stampResult.iso"
-                aria-label="UTC ISO 日期结果"
-                readonly /><button
-                class="icon-button"
-                aria-label="复制 ISO 日期结果"
-                @click="copy(stampResult.iso)"
-              >
-                <Icon name="Copy" :size="15" /></button></span
-          ></label>
-        </div>
-        <p v-else-if="!stampError" class="timestamp-empty">
-          输入时间戳，点击转换或按 Enter
-        </p>
-      </section>
-      <section class="timestamp-converter" aria-label="日期转时间戳">
-        <div class="timestamp-section-heading">
-          <h2>日期时间 → 时间戳</h2>
-          <button class="text-button" @click="useCurrentDate">
-            填入当前日期时间
+        <div class="unix-result-row">
+          <input
+            id="unix-date-result"
+            :value="stampResult?.dateTime || ''"
+            readonly
+            placeholder="转换结果"
+            aria-label="日期转换结果"
+          />
+          <button
+            class="button secondary"
+            :disabled="!stampResult"
+            @click="stampResult && copy(stampResult.dateTime)"
+            aria-label="复制日期转换结果"
+          >
+            <Icon name="Copy" :size="15" />复制
           </button>
         </div>
-        <form @submit.prevent="convertDate">
-          <label class="field-label"
-            >日期和时间<input
-              v-model="inputDate"
-              placeholder="2026-10-27 12:00:00.123"
-              autocomplete="off"
-              maxlength="60"
-          /></label>
-          <p class="timestamp-input-help">
-            支持粘贴日期、毫秒或 ISO 格式。未带时区时按 {{ zone }} 解释；Z /
-            +08:00 等明确偏移优先。
-          </p>
-          <div class="timestamp-form-actions">
-            <button class="button primary" type="submit">
-              转换为时间戳<Icon name="ArrowRight" :size="15" /></button
-            ><button
-              type="button"
-              class="text-button"
-              @click="inputDate = ''"
-              aria-label="清空日期时间"
-            >
-              清空
+        <details v-if="stampResult" class="unix-extra-result">
+          <summary>查看 UTC / ISO 8601</summary>
+          <div class="unix-result-row">
+            <input
+              :value="stampResult.iso"
+              aria-label="UTC ISO 日期结果"
+              readonly
+            /><button class="button secondary" @click="copy(stampResult.iso)">
+              复制 ISO
             </button>
           </div>
+        </details>
+      </section>
+      <section class="unix-section" aria-label="日期时间转时间戳">
+        <h2><Icon name="CalendarDays" :size="18" />日期时间转时间戳</h2>
+        <form class="unix-form unix-date-form" @submit.prevent="convertDate">
+          <label class="unix-field"
+            >日期时间<input
+              v-model="inputDate"
+              placeholder="YYYY-MM-DD HH:mm:ss"
+              autocomplete="off"
+              maxlength="60"
+              aria-label="待转换日期时间"
+          /></label>
+          <label class="unix-field"
+            >时区<select v-model="dateZone" aria-label="日期转换时区">
+              <option v-for="item in zoneChoices" :key="item" :value="item">
+                {{ item }}
+              </option>
+            </select></label
+          >
+          <button
+            type="button"
+            class="button secondary"
+            @click="useCurrentDate"
+          >
+            填入当前
+          </button>
+          <button type="submit" class="button primary">转换</button>
         </form>
-        <p v-if="dateError" role="alert" class="error-message">
+        <p v-if="dateError" class="error-message" role="alert">
           {{ dateError }}
         </p>
-        <div
-          v-if="dateResult"
-          class="timestamp-result"
-          aria-label="时间戳转换结果"
+        <label class="unix-result-label" for="unix-stamp-result"
+          >转换结果</label
         >
-          <div class="timestamp-result-heading">
-            <span>同时输出两种单位</span>
-          </div>
-          <label class="field-label"
-            >秒时间戳<span class="timestamp-copy-value"
-              ><input
-                :value="dateResult.seconds"
-                aria-label="秒时间戳结果"
-                readonly /><button
-                class="icon-button"
-                aria-label="复制秒时间戳结果"
-                @click="copy(dateResult.seconds)"
-              >
-                <Icon name="Copy" :size="15" /></button></span
-          ></label>
-          <label class="field-label"
-            >毫秒时间戳<span class="timestamp-copy-value"
-              ><input
-                :value="dateResult.milliseconds"
-                aria-label="毫秒时间戳结果"
-                readonly /><button
-                class="icon-button"
-                aria-label="复制毫秒时间戳结果"
-                @click="copy(dateResult.milliseconds)"
-              >
-                <Icon name="Copy" :size="15" /></button></span
-          ></label>
+        <div class="unix-result-row unix-stamp-result">
+          <input
+            id="unix-stamp-result"
+            :value="dateOutput"
+            readonly
+            placeholder="转换结果"
+            aria-label="时间戳转换结果"
+          />
+          <select v-model="outputUnit" aria-label="输出时间戳单位">
+            <option value="seconds">秒（s）</option>
+            <option value="milliseconds">毫秒（ms）</option>
+          </select>
+          <button
+            class="button secondary"
+            :disabled="!dateResult"
+            @click="copy(dateOutput)"
+            aria-label="复制时间戳转换结果"
+          >
+            <Icon name="Copy" :size="15" />复制
+          </button>
         </div>
-        <p v-else-if="!dateError" class="timestamp-empty">
-          输入日期时间，点击转换或按 Enter
+        <p class="unix-help">
+          支持毫秒、ISO 8601
+          和带时区的日期。未指定偏移时，按上面选择的时区转换。
         </p>
       </section>
     </div>
@@ -464,6 +441,31 @@ const snippet = computed(() =>
         </div>
         <button class="text-button" @click="batchExample">填入示例</button>
       </div>
+      <div class="unix-batch-actions">
+        <label class="unix-field"
+          >时区<select v-model="batchZone" aria-label="批量转换时区">
+            <option v-for="item in zoneChoices" :key="item" :value="item">
+              {{ item }}
+            </option>
+          </select></label
+        >
+        <button class="button primary" @click="runBatch">开始转换</button>
+        <button class="button secondary" @click="batchInput = ''">清空</button>
+        <button
+          class="button secondary"
+          :disabled="!batchRows.length"
+          @click="copy(batchOutput)"
+        >
+          复制结果
+        </button>
+        <button
+          class="button secondary"
+          :disabled="!batchRows.length"
+          @click="downloadText(batchOutput, 'timestamps.txt')"
+        >
+          下载结果
+        </button>
+      </div>
       <div class="editor-grid">
         <EditorPanel
           v-model="batchInput"
@@ -478,16 +480,10 @@ const snippet = computed(() =>
           filename="timestamps.txt"
         />
       </div>
-      <div class="action-row">
-        <button class="button primary" @click="runBatch">
-          批量转换<Icon name="ArrowRight" :size="15" /></button
-        ><button class="button secondary" @click="batchInput = ''">
-          清空输入</button
-        ><span v-if="batchRows.length" class="muted" role="status"
-          >成功 {{ batchSuccess }} 条 · 失败
-          {{ batchRows.length - batchSuccess }} 条</span
-        >
-      </div>
+      <p v-if="batchRows.length" class="unix-batch-status" role="status">
+        成功 {{ batchSuccess }} 条 · 失败
+        {{ batchRows.length - batchSuccess }} 条
+      </p>
       <p v-if="batchError" role="alert" class="error-message">
         {{ batchError }}
       </p>
@@ -496,7 +492,21 @@ const snippet = computed(() =>
       </div>
     </template>
 
-    <div v-else-if="tab === 'difference'" class="date-difference">
+    <div class="unix-secondary-tabs" aria-label="其他时间工具">
+      <button
+        class="text-button"
+        @click="tab = tab === 'difference' ? 'convert' : 'difference'"
+      >
+        日期差计算</button
+      ><button
+        class="text-button"
+        @click="tab = tab === 'code' ? 'convert' : 'code'"
+      >
+        获取时间戳代码
+      </button>
+    </div>
+
+    <div v-if="tab === 'difference'" class="date-difference">
       <div class="two-fields">
         <label class="field-label"
           >开始日期<input v-model="dayStart" type="date" /></label
@@ -527,7 +537,11 @@ const snippet = computed(() =>
       </p>
     </div>
 
-    <section v-else class="timestamp-code" aria-label="获取当前时间戳的代码">
+    <section
+      v-else-if="tab === 'code'"
+      class="timestamp-code"
+      aria-label="获取当前时间戳的代码"
+    >
       <div class="timestamp-section-heading">
         <label class="inline-label"
           >编程语言<select v-model="language">
@@ -560,3 +574,268 @@ const snippet = computed(() =>
     </details>
   </div>
 </template>
+
+<style scoped>
+.timestamp-workspace {
+  padding: 18px;
+  border-radius: 14px;
+  color: var(--text);
+}
+.unix-live {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+.unix-live-value > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.unix-live-value > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.unix-number {
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: var(--text);
+  font:
+    700 clamp(23px, 2.5vw, 30px)/1.4 ui-monospace,
+    monospace;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.unix-unit {
+  color: var(--primary);
+  background: var(--tint);
+  font-size: 12px;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.unix-live time {
+  color: var(--subtle);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.unix-live-buttons {
+  display: flex;
+  gap: 8px;
+}
+.timestamp-workspace .button {
+  min-height: 40px;
+  font-size: 13px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  gap: 7px;
+  border-radius: 8px;
+}
+.unix-tabs {
+  display: flex;
+  background: var(--code-bg);
+  padding: 4px;
+  border-radius: 9px;
+  margin-top: 14px;
+}
+.unix-tabs button {
+  flex: 1;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 9px 12px;
+  background: transparent;
+  color: var(--subtle);
+  font-size: 14px;
+  cursor: pointer;
+}
+.unix-tabs button.active {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: 0 1px 3px #00000009;
+}
+.unix-section {
+  padding: 22px 0;
+}
+.unix-section + .unix-section {
+  border-top: 1px solid var(--border);
+}
+.unix-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  margin: 0 0 22px;
+  font-weight: 600;
+}
+.unix-section h2 svg {
+  color: var(--primary);
+}
+.unix-form {
+  display: grid;
+  gap: 10px;
+  align-items: end;
+}
+.unix-stamp-form {
+  grid-template-columns:
+    minmax(140px, 1fr) 120px minmax(150px, 200px)
+    auto auto;
+}
+.unix-date-form {
+  grid-template-columns: minmax(200px, 1fr) minmax(150px, 200px) auto auto;
+}
+.unix-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--subtle);
+}
+.unix-field input,
+.unix-field select,
+.unix-result-row input,
+.unix-result-row select {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font:
+    14px/1.5 ui-monospace,
+    monospace;
+  color: var(--text);
+  background: var(--surface);
+}
+.unix-field select,
+.unix-result-row select {
+  font-family: inherit;
+}
+.unix-result-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--subtle);
+  margin: 13px 0 8px;
+}
+.unix-result-label span {
+  color: var(--primary);
+}
+.unix-result-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+.unix-stamp-result {
+  grid-template-columns: minmax(0, 1fr) 130px auto;
+}
+.unix-result-row input {
+  background: var(--surface);
+}
+.unix-extra-result {
+  margin-top: 12px;
+  color: var(--subtle);
+  font-size: 12px;
+}
+.unix-extra-result summary {
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.unix-help {
+  font-size: 12px;
+  color: var(--subtle);
+  margin: 12px 0 0;
+  line-height: 1.6;
+}
+.unix-secondary-tabs {
+  display: flex;
+  gap: 24px;
+  padding: 8px 0 14px;
+}
+.unix-secondary-tabs button {
+  font-size: 13px;
+}
+.unix-batch-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 16px 0;
+  flex-wrap: wrap;
+}
+.unix-batch-actions .unix-field {
+  flex: 1;
+  min-width: 180px;
+  max-width: 280px;
+}
+.unix-batch-status {
+  font-size: 13px;
+  color: var(--primary);
+  padding: 12px 0;
+}
+.timestamp-workspace .timestamp-batch-options {
+  padding: 18px 0 12px;
+}
+.timestamp-workspace .timestamp-notes {
+  padding: 16px 0 0;
+}
+.timestamp-workspace .timestamp-notes p {
+  font-size: 12px;
+}
+@media (max-width: 1100px) {
+  .unix-stamp-form {
+    grid-template-columns: minmax(140px, 1fr) 110px minmax(140px, 180px);
+  }
+  .unix-date-form {
+    grid-template-columns: minmax(180px, 1fr) minmax(140px, 180px);
+  }
+  .unix-form > button {
+    grid-row: 2;
+  }
+}
+@media (max-width: 600px) {
+  .timestamp-workspace {
+    padding: 14px;
+  }
+  .unix-live {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+  }
+  .unix-live-buttons {
+    width: 100%;
+  }
+  .unix-live-buttons button {
+    flex: 1;
+  }
+  .unix-form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .unix-form .unix-field:first-child {
+    grid-column: 1 / -1;
+  }
+  .unix-form > button {
+    grid-row: auto;
+  }
+  .unix-date-form .unix-field:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+  .unix-result-row {
+    gap: 8px;
+  }
+  .unix-stamp-result {
+    grid-template-columns: minmax(0, 1fr) 120px;
+  }
+  .unix-stamp-result button {
+    grid-column: 1 / -1;
+  }
+  .unix-section h2 {
+    margin-bottom: 18px;
+  }
+}
+</style>

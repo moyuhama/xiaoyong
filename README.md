@@ -57,6 +57,10 @@
 
 支持分类搜索、深色模式、手机布局与键盘搜索（Ctrl / Command + K）。
 
+时间戳功能页按 [Tool.lu 时间戳页面](https://tool.lu/timestamp/)的操作结构整理：顶部集中显示当前数值并切换秒 / 毫秒；两组转换表单纵向排列，各自选择时区，结果可直接复制；保留批量转换、日期差与代码示例。
+
+JSON 功能页提供格式化校验、压缩、转义、去除转义，以及 YAML / TypeScript 转换。输入支持打开文件、语法高亮、撤销、重做与 JSON 修复；结果可切换树形 / 文本视图、展开折叠、搜索、复制和下载。编辑及树形查看采用 [JSONEditor](https://github.com/josdejong/jsoneditor)（Apache-2.0），其代码按需加载到 JSON 页面。
+
 前期调研参考 [IT-Tools](https://github.com/CorentinTh/it-tools) 与 [OmniTools](https://github.com/iib0011/omni-tools) 的工具分类。本轮参考 [懒人工具](https://www.lanren-tools.com/) 的图片与 PDF 目录，以及 Tool.lu 的[图片拼图](https://tool.lu/collage/)、[证件照排版](https://tool.lu/imageprint/)、[图片转 PDF](https://tool.lu/image2pdf/)、[SQL](https://tool.lu/sql/)、[ICO](https://tool.lu/favicon/)和[拼音](https://tool.lu/py5bconvert/)工具；通过 [67 工具的数字类页面公开索引](https://www.67tool.com/number/hex-to-binary)核对随机数、金额大写需求（其首页限制自动访问）。参考功能方向，按小用现有界面独立实现，不复制这些网站的页面、品牌或源码。
 
 ## GitHub Pages 部署

@@ -18,6 +18,9 @@ const TextTools = defineAsyncComponent(
 const DevTools = defineAsyncComponent(
   () => import("./components/DevTools.vue"),
 );
+const JsonTool = defineAsyncComponent(
+  () => import("./components/JsonTool.vue"),
+);
 const ImageTools = defineAsyncComponent(
   () => import("./components/ImageTools.vue"),
 );
@@ -113,6 +116,7 @@ const toolComponent = computed(() => {
   const module = currentTool.value?.module;
   if (module) return extraModules[module];
   const id = currentTool.value?.id;
+  if (id === "json") return JsonTool;
   if (id?.startsWith("image-")) return ImageTools;
   if (id?.startsWith("text-")) return TextTools;
   if (["json", "encoding", "regex", "generator"].includes(id || ""))
