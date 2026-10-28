@@ -222,104 +222,156 @@ onUnmounted(clear);
           更换图片
         </button>
       </div>
-      <div class="image-settings">
-        <label class="field-label"
-          >输出格式<select v-model="format" :disabled="busy">
-            <option value="image/webp">WebP · 更小体积</option>
-            <option value="image/jpeg">JPG · 通用格式</option>
-            <option value="image/png">PNG · 无损像素输出</option>
-          </select></label
-        ><template v-if="toolId === 'image-convert'"
-          ><label class="field-label"
-            >宽度（px）<input
-              :value="width"
-              type="number"
-              min="1"
-              max="16384"
-              :disabled="busy"
-              @input="
-                resize('width', ($event.target as HTMLInputElement).value)
-              " /></label
-          ><label class="field-label"
-            >高度（px）<input
-              :value="height"
-              type="number"
-              min="1"
-              max="16384"
-              :disabled="busy"
-              @input="
-                resize('height', ($event.target as HTMLInputElement).value)
-              " /></label
-          ><label class="check-label"
-            ><input
-              v-model="locked"
-              type="checkbox"
-              :disabled="busy"
-            />锁定比例</label
-          ></template
-        ><label v-if="format !== 'image/png'" class="field-label quality-slider"
-          >图片质量 <span>{{ quality }}%</span
-          ><input
-            v-model.number="quality"
-            type="range"
-            min="10"
-            max="100"
-            :disabled="busy"
-        /></label>
-      </div>
-      <div class="image-comparison">
-        <section>
-          <div class="panel-heading">
-            <h2>原始图片</h2>
-            <span class="muted">{{ formatBytes(file.size) }}</span>
-          </div>
-          <div class="image-preview checkerboard">
-            <img :src="originalUrl" alt="原始图片预览" />
-          </div>
-        </section>
-        <section>
-          <div class="panel-heading">
-            <h2>处理后</h2>
-            <span v-if="output" :class="savings > 0 ? 'success-text' : 'muted'"
-              >{{ formatBytes(output.size) }} ·
-              {{
-                savings >= 0
-                  ? "减少 " + savings + "%"
-                  : "增大 " + Math.abs(savings) + "%"
-              }}</span
-            >
-          </div>
-          <div class="image-preview checkerboard">
-            <img v-if="resultUrl" :src="resultUrl" alt="处理后图片预览" />
-            <div v-else class="panel-placeholder">
-              <Icon name="ImageDown" :size="32" />
-              <p>处理后的图片会显示在这里</p>
+      <div class="media-workbench">
+        <aside class="media-settings">
+          <div class="image-settings">
+            <div v-if="toolId === 'image-compress'" class="preset-row">
+              <button
+                v-for="[value, label] in [
+                  [60, '更小体积'],
+                  [80, '均衡'],
+                  [95, '高清'],
+                ]"
+                :key="value"
+                class="button secondary"
+                :disabled="busy"
+                @click="
+                  quality = Number(value);
+                  format = 'image/webp';
+                "
+              >
+                {{ label }}
+              </button>
             </div>
+            <div v-else class="preset-row">
+              <button
+                v-for="scale in [25, 50, 75, 100]"
+                :key="scale"
+                class="button secondary"
+                :disabled="busy"
+                @click="
+                  width = Math.max(
+                    1,
+                    Math.round((dimensions.width * scale) / 100),
+                  );
+                  height = Math.max(
+                    1,
+                    Math.round((dimensions.height * scale) / 100),
+                  );
+                "
+              >
+                {{ scale }}%
+              </button>
+            </div>
+            <label class="field-label"
+              >输出格式<select v-model="format" :disabled="busy">
+                <option value="image/webp">WebP · 更小体积</option>
+                <option value="image/jpeg">JPG · 通用格式</option>
+                <option value="image/png">PNG · 无损像素输出</option>
+              </select></label
+            ><template v-if="toolId === 'image-convert'"
+              ><label class="field-label"
+                >宽度（px）<input
+                  :value="width"
+                  type="number"
+                  min="1"
+                  max="16384"
+                  :disabled="busy"
+                  @input="
+                    resize('width', ($event.target as HTMLInputElement).value)
+                  " /></label
+              ><label class="field-label"
+                >高度（px）<input
+                  :value="height"
+                  type="number"
+                  min="1"
+                  max="16384"
+                  :disabled="busy"
+                  @input="
+                    resize('height', ($event.target as HTMLInputElement).value)
+                  " /></label
+              ><label class="check-label"
+                ><input
+                  v-model="locked"
+                  type="checkbox"
+                  :disabled="busy"
+                />锁定比例</label
+              ></template
+            ><label
+              v-if="format !== 'image/png'"
+              class="field-label quality-slider"
+              >图片质量 <span>{{ quality }}%</span
+              ><input
+                v-model.number="quality"
+                type="range"
+                min="10"
+                max="100"
+                :disabled="busy"
+            /></label>
           </div>
-        </section>
-      </div>
-      <div class="action-row">
-        <button class="button primary" :disabled="busy" @click="processImage">
-          <Icon
-            :name="busy ? 'LoaderCircle' : 'SlidersHorizontal'"
-            :size="17"
-            :class="{ spin: busy }"
-          />{{
-            busy
-              ? "正在处理"
-              : toolId === "image-compress"
-                ? "开始压缩"
-                : "转换图片"
-          }}</button
-        ><button
-          class="button secondary"
-          :disabled="!output || busy"
-          @click="output && downloadBlob(output, outputName)"
-        >
-          <Icon name="Download" :size="17" />下载图片</button
-        ><button class="text-button" :disabled="busy" @click="clear">
-          清除图片
-        </button>
+          <div class="action-row">
+            <button
+              class="button primary"
+              :disabled="busy"
+              @click="processImage"
+            >
+              <Icon
+                :name="busy ? 'LoaderCircle' : 'SlidersHorizontal'"
+                :size="17"
+                :class="{ spin: busy }"
+              />{{
+                busy
+                  ? "正在处理"
+                  : toolId === "image-compress"
+                    ? "开始压缩"
+                    : "转换图片"
+              }}</button
+            ><button
+              class="button secondary"
+              :disabled="!output || busy"
+              @click="output && downloadBlob(output, outputName)"
+            >
+              <Icon name="Download" :size="17" />下载图片</button
+            ><button class="text-button" :disabled="busy" @click="clear">
+              清除图片
+            </button>
+          </div>
+        </aside>
+        <div class="media-canvas">
+          <div class="image-comparison">
+            <section>
+              <div class="panel-heading">
+                <h2>原始图片</h2>
+                <span class="muted">{{ formatBytes(file.size) }}</span>
+              </div>
+              <div class="image-preview checkerboard">
+                <img :src="originalUrl" alt="原始图片预览" />
+              </div>
+            </section>
+            <section>
+              <div class="panel-heading">
+                <h2>处理后</h2>
+                <span
+                  v-if="output"
+                  :class="savings > 0 ? 'success-text' : 'muted'"
+                  >{{ formatBytes(output.size) }} ·
+                  {{
+                    savings >= 0
+                      ? "减少 " + savings + "%"
+                      : "增大 " + Math.abs(savings) + "%"
+                  }}</span
+                >
+              </div>
+              <div class="image-preview checkerboard">
+                <img v-if="resultUrl" :src="resultUrl" alt="处理后图片预览" />
+                <div v-else class="panel-placeholder">
+                  <Icon name="ImageDown" :size="32" />
+                  <p>处理后的图片会显示在这里</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
       </div>
     </template>
     <div v-if="error" role="alert" class="error-message">{{ error }}</div>

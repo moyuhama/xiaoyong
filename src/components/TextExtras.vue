@@ -57,15 +57,27 @@ function example() {
       <div class="toolbar-options">
         <label class="check-label"
           ><input v-model="ignoreCase" type="checkbox" />忽略字母大小写</label
-        ><label v-if="toolId === 'list-compare'" class="inline-label"
-          >对比方式<select v-model="operation" aria-label="对比方式">
-            <option value="intersection">两边都有（交集）</option>
-            <option value="left">仅在名单 A</option>
-            <option value="right">仅在名单 B</option>
-            <option value="union">合并去重（并集）</option>
-            <option value="difference">仅在其中一边</option>
-          </select></label
         >
+        <div
+          v-if="toolId === 'list-compare'"
+          class="mode-buttons"
+          aria-label="对比方式"
+        >
+          <button
+            v-for="[value, label] in [
+              ['intersection', '交集 A ∩ B'],
+              ['left', '仅 A 有'],
+              ['right', '仅 B 有'],
+              ['union', '合并去重'],
+              ['difference', '不同项'],
+            ]"
+            :key="value"
+            :class="{ active: operation === value }"
+            @click="operation = value!"
+          >
+            {{ label }}
+          </button>
+        </div>
       </div>
       <div class="toolbar-actions">
         <button class="text-button" @click="example">填入示例</button

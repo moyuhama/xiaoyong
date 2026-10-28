@@ -282,7 +282,12 @@ onUnmounted(() => {
         /></a>
       </div>
     </header>
-    <main id="main-content" tabindex="-1">
+    <main
+      id="main-content"
+      tabindex="-1"
+      :class="{ 'function-page': currentTool }"
+      :data-tool="currentTool?.id"
+    >
       <template v-if="!isToolRoute">
         <section v-if="view === 'all'" class="hero">
           <div class="hero-copy">

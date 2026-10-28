@@ -61,6 +61,15 @@
 
 JSON 功能页提供格式化校验、压缩、转义、去除转义，以及 YAML / TypeScript 转换。输入支持打开文件、语法高亮、撤销、重做与 JSON 修复；结果可切换树形 / 文本视图、展开折叠、搜索、复制和下载。编辑及树形查看采用 [JSONEditor](https://github.com/josdejong/jsoneditor)（Apache-2.0），其代码按需加载到 JSON 页面。
 
+70 个功能页按工具类型调整操作区、输入区和结果区：
+
+- 文本与代码采用 [CodeMirror 6](https://codemirror.net/)（MIT）：行号、语法高亮、查找、撤销重做、换行、放大编辑、打开 UTF-8 文件和结果下载。操作按钮前置，多种转换方式直接切换。
+- 图片页将参数与原图 / 输出预览并排；常用尺寸、压缩质量、滤镜、条码类型可直接选取。批量处理先显示素材缩略图，再显示生成结果。
+- PDF 页提供分页缩略图和点选页面，生成后预览结果；文件工具按输入与结果分区，保留文件列表、工作表和导出操作。
+- 计算页直接呈现数值、统计指标和多个单位 / 进制结果；世界时钟支持表格对比，倒计时提供常用时长。
+
+操作流程参考 [BeJSON 的 Base64 编解码](https://www.bejson.com/enc/base64/)（编码、解码、内容交换），以及 Tool.lu 的[正则测试](https://tool.lu/regex/)（常用表达式和匹配选项）、[二维码](https://tool.lu/qrcode/)（颜色和边距）、[图片压缩](https://tool.lu/tinyimage/)和 [PDF 合并](https://tool.lu/pdfmerger/)（文件排序与导出）。功能页样式集中于 `src/function-pages.css`，只作用于工具路由。
+
 前期调研参考 [IT-Tools](https://github.com/CorentinTh/it-tools) 与 [OmniTools](https://github.com/iib0011/omni-tools) 的工具分类。本轮参考 [懒人工具](https://www.lanren-tools.com/) 的图片与 PDF 目录，以及 Tool.lu 的[图片拼图](https://tool.lu/collage/)、[证件照排版](https://tool.lu/imageprint/)、[图片转 PDF](https://tool.lu/image2pdf/)、[SQL](https://tool.lu/sql/)、[ICO](https://tool.lu/favicon/)和[拼音](https://tool.lu/py5bconvert/)工具；通过 [67 工具的数字类页面公开索引](https://www.67tool.com/number/hex-to-binary)核对随机数、金额大写需求（其首页限制自动访问）。参考功能方向，按小用现有界面独立实现，不复制这些网站的页面、品牌或源码。
 
 ## GitHub Pages 部署

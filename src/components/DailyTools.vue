@@ -8,6 +8,9 @@ const props = defineProps<{ toolId: string }>();
 const qrInput = ref(""),
   qrSize = ref("512"),
   correction = ref<"L" | "M" | "Q" | "H">("M");
+const foreground = ref("#203D36"),
+  background = ref("#FFFFFF"),
+  margin = ref(4);
 const qrUrl = ref(""),
   qrSvg = ref(""),
   qrBusy = ref(false);
@@ -52,14 +55,22 @@ async function makeQr() {
     error.value = "内容请控制在 2,000 字符以内";
     return;
   }
+  if (
+    !Number.isInteger(margin.value) ||
+    margin.value < 0 ||
+    margin.value > 20
+  ) {
+    error.value = "边距需为 0–20 的整数";
+    return;
+  }
   const current = ++qrGeneration;
   qrBusy.value = true;
   try {
     const options = {
       errorCorrectionLevel: correction.value,
       width: Number(qrSize.value),
-      margin: 4,
-      color: { dark: "#203D36", light: "#FFFFFFFF" },
+      margin: margin.value,
+      color: { dark: foreground.value, light: background.value },
     };
     const [url, svg] = await Promise.all([
       QRCode.toDataURL(qrInput.value, options),
@@ -91,7 +102,7 @@ function downloadQr(svg = false) {
     );
   }
 }
-watch([qrInput, qrSize, correction], () => {
+watch([qrInput, qrSize, correction, foreground, background, margin], () => {
   qrGeneration++;
   qrUrl.value = "";
   qrSvg.value = "";
@@ -131,7 +142,20 @@ watch([qrInput, qrSize, correction], () => {
               </select></label
             >
           </div>
-          <button class="button primary" :disabled="qrBusy" @click="makeQr">
+          <div class="two-fields">
+            <label class="field-label"
+              >前景色<input type="color" v-model="foreground" /></label
+            ><label class="field-label"
+              >背景色<input type="color" v-model="background"
+            /></label>
+          </div>
+          <label class="field-label"
+            >留白边距（模块）<input
+              type="number"
+              min="0"
+              max="20"
+              v-model.number="margin" /></label
+          ><button class="button primary" :disabled="qrBusy" @click="makeQr">
             <Icon name="QrCode" :size="17" />{{
               qrBusy ? "正在生成" : "生成二维码"
             }}

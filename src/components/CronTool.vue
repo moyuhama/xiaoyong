@@ -56,65 +56,87 @@ function display(iso: string) {
         使用当前时刻
       </button>
     </div>
-    <div class="settings-panel">
-      <label class="field-label"
-        >Cron 表达式<input
-          v-model="expression"
-          class="code-input"
-          spellcheck="false"
-          placeholder="0 9 * * 1-5"
-      /></label>
-      <div class="preset-row">
-        <button
-          v-for="item in examples"
-          :key="item.value"
-          class="button secondary"
-          @click="expression = item.value"
-        >
-          {{ item.name }}
+    <div class="cron-workbench">
+      <div class="settings-panel">
+        <label class="field-label"
+          >Cron 表达式<input
+            v-model="expression"
+            class="code-input"
+            spellcheck="false"
+            placeholder="0 9 * * 1-5"
+        /></label>
+        <div class="cron-fields">
+          <div
+            v-for="(name, index) in ['分钟', '小时', '日期', '月份', '星期']"
+            :key="name"
+          >
+            <code>{{ expression.trim().split(/\s+/)[index] || "*" }}</code
+            ><small>{{ name }}</small>
+          </div>
+        </div>
+        <div class="preset-row">
+          <button
+            v-for="item in examples"
+            :key="item.value"
+            class="button secondary"
+            @click="expression = item.value"
+          >
+            {{ item.name }}
+          </button>
+        </div>
+        <div class="two-fields">
+          <label class="field-label"
+            >执行时区<select v-model="zone" aria-label="执行时区">
+              <option
+                v-for="city in worldCities"
+                :key="city.zone"
+                :value="city.zone"
+              >
+                {{ city.name }} · {{ city.zone }}
+              </option>
+            </select></label
+          ><label class="field-label"
+            >计算起点（UTC）<input
+              v-model="start"
+              type="datetime-local"
+              step="1"
+          /></label>
+        </div>
+        <button class="button primary" :disabled="busy" @click="calculate">
+          {{ busy ? "正在计算…" : "解析并计算"
+          }}<Icon name="ArrowRight" :size="16" />
         </button>
       </div>
-      <div class="two-fields">
-        <label class="field-label"
-          >执行时区<select v-model="zone" aria-label="执行时区">
-            <option
-              v-for="city in worldCities"
-              :key="city.zone"
-              :value="city.zone"
-            >
-              {{ city.name }} · {{ city.zone }}
-            </option>
-          </select></label
-        ><label class="field-label"
-          >计算起点（UTC）<input v-model="start" type="datetime-local" step="1"
-        /></label>
-      </div>
-      <button class="button primary" :disabled="busy" @click="calculate">
-        {{ busy ? "正在计算…" : "解析并计算"
-        }}<Icon name="ArrowRight" :size="16" />
-      </button>
+
+      <section class="cron-result settings-panel">
+        <template v-if="result">
+          <h2>{{ result.description }}</h2>
+          <p class="muted">
+            接下来的 {{ result.dates.length }} 次执行时间 · {{ zone }}
+          </p>
+          <ol class="cron-dates">
+            <li v-for="date in result.dates" :key="date">
+              <time :datetime="date">{{ display(date) }}</time
+              ><button
+                class="icon-button"
+                :aria-label="'复制执行时间 ' + date"
+                @click="copy(display(date))"
+              >
+                <Icon name="Copy" :size="16" />
+              </button>
+            </li>
+          </ol>
+        </template>
+        <div v-else class="preview-placeholder">
+          <Icon name="CalendarDays" :size="40" />
+          <p>接下来的执行时间</p>
+          <small>填写表达式，点击「解析并计算」</small>
+        </div>
+      </section>
     </div>
     <p v-if="validation || error" role="alert" class="error-message">
       {{ validation || error }}
     </p>
-    <section v-if="result" class="cron-result settings-panel">
-      <h2>{{ result.description }}</h2>
-      <p class="muted">
-        接下来的 {{ result.dates.length }} 次执行时间 · {{ zone }}
-      </p>
-      <ol class="cron-dates">
-        <li v-for="date in result.dates" :key="date">
-          <time :datetime="date">{{ display(date) }}</time
-          ><button
-            class="icon-button"
-            :aria-label="'复制执行时间 ' + date"
-            @click="copy(display(date))"
-          >
-            <Icon name="Copy" :size="16" />
-          </button>
-        </li>
-      </ol>
-    </section>
     <div class="workspace-footnote">
       <Icon name="Info" :size="15" />星期 0 和 7
       都表示周日。日期与星期同时指定时按“或”匹配；这里只解析规则，不创建定时任务。

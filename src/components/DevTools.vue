@@ -55,6 +55,59 @@ const encoded = computed(() => {
     };
   }
 });
+const regexPresets = [
+  {
+    name: "邮箱",
+    pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+    text: "hello@example.com\nsupport@example.org",
+  },
+  {
+    name: "中文",
+    pattern: "[\\u4e00-\\u9fff]+",
+    text: "Hello 你好，工具箱 World",
+  },
+  {
+    name: "数字",
+    pattern: "-?\\d+(?:\\.\\d+)?",
+    text: "数量 12，价格 19.95，温度 -3",
+  },
+  {
+    name: "网址",
+    pattern: "https?://[^\\s]+",
+    text: "https://example.com/docs\nhttp://example.org",
+  },
+  {
+    name: "日期",
+    pattern: "\\d{4}-\\d{2}-\\d{2}",
+    text: "2026-10-29 2026-12-01",
+  },
+];
+function toggleFlag(flag: string, enabled: boolean) {
+  flags.value = enabled
+    ? [...new Set(flags.value + flag)].join("")
+    : flags.value.replaceAll(flag, "");
+}
+const highlighted = computed(() => {
+  const parts: { text: string; match: boolean }[] = [];
+  let cursor = 0;
+  for (const m of matches.value) {
+    if (m.index < cursor || !m.value.length) continue;
+    parts.push(
+      { text: input.value.slice(cursor, m.index), match: false },
+      { text: m.value, match: true },
+    );
+    cursor = m.index + m.value.length;
+  }
+  parts.push({ text: input.value.slice(cursor), match: false });
+  return parts;
+});
+function swapEncoding() {
+  const text = encoded.value.result;
+  if (!text) return;
+  input.value = text;
+  decode.value = !decode.value;
+}
+
 function runJson(action: JsonAction) {
   error.value = "";
   result.value = "";
@@ -210,6 +263,16 @@ onUnmounted(cancelRegex);
       <div class="generator-grid">
         <div class="settings-panel">
           <h2>生成设置</h2>
+          <div class="preset-row">
+            <button
+              v-for="n in [1, 5, 10, 20, 50, 100]"
+              :key="n"
+              class="button secondary"
+              @click="count = n"
+            >
+              {{ n }} 个
+            </button>
+          </div>
           <label class="field-label"
             >生成数量<input
               v-model.number="count"
@@ -285,6 +348,42 @@ onUnmounted(cancelRegex);
           </button>
         </div>
       </div>
+      <div class="regex-presets settings-panel">
+        <span>常用表达式</span>
+        <div class="preset-row">
+          <button
+            v-for="item in regexPresets"
+            :key="item.name"
+            class="button secondary"
+            @click="
+              pattern = item.pattern;
+              input = item.text;
+              flags = 'g';
+            "
+          >
+            {{ item.name }}
+          </button>
+        </div>
+        <div class="toolbar-options">
+          <label
+            v-for="[flag, label] in [
+              ['g', '全部匹配'],
+              ['i', '忽略大小写'],
+              ['m', '多行'],
+              ['s', '点号包含换行'],
+            ]"
+            :key="flag"
+            class="check-label"
+            ><input
+              type="checkbox"
+              :checked="flags.includes(flag!)"
+              @change="
+                toggleFlag(flag!, ($event.target as HTMLInputElement).checked)
+              "
+            />{{ label }} ({{ flag }})</label
+          >
+        </div>
+      </div>
       <div class="regex-settings">
         <label class="field-label regex-pattern"
           >表达式
@@ -324,6 +423,9 @@ onUnmounted(cancelRegex);
             <span class="muted">{{
               tested ? matches.length + " 个匹配" : "等待测试"
             }}</span>
+          </div>
+          <div v-if="tested && input" class="regex-highlight">
+            <pre><template v-for="(part,index) in highlighted" :key="index"><mark v-if="part.match">{{part.text}}</mark><span v-else>{{part.text}}</span></template></pre>
           </div>
           <div class="match-list">
             <div v-if="!tested" class="panel-placeholder">
@@ -390,10 +492,15 @@ onUnmounted(cancelRegex);
                 URL
               </button>
             </div>
-            <select v-model="decode" aria-label="编码操作">
-              <option :value="false">编码</option>
-              <option :value="true">解码</option>
-            </select></template
+            <div class="mode-buttons" aria-label="编码操作">
+              <button :class="{ active: !decode }" @click="decode = false">
+                编码</button
+              ><button :class="{ active: decode }" @click="decode = true">
+                解码</button
+              ><button :disabled="!encoded.result" @click="swapEncoding">
+                交换内容
+              </button>
+            </div></template
           >
         </div>
         <div class="toolbar-actions">

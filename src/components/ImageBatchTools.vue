@@ -169,14 +169,12 @@ async function generate() {
           width: pw - 2 * padding,
           height: ph - 2 * padding,
         });
-        doc
-          .addPage([pw, ph])
-          .drawImage(embedded, {
-            x: fit.x,
-            y: ph - fit.y - fit.height,
-            width: fit.width,
-            height: fit.height,
-          });
+        doc.addPage([pw, ph]).drawImage(embedded, {
+          x: fit.x,
+          y: ph - fit.y - fit.height,
+          width: fit.width,
+          height: fit.height,
+        });
         if (!first) {
           const previewPage = newCanvas(
             Math.round(pw * 1.5),
@@ -357,6 +355,11 @@ function download() {
     <template v-else>
       <div class="batch-layout">
         <div class="settings-panel batch-settings">
+          <h2>
+            {{
+              print ? "照片与纸张" : pdf ? "图片顺序与纸张" : "图片顺序与布局"
+            }}
+          </h2>
           <ol class="pdf-file-list">
             <li v-for="(image, index) in images" :key="image.id">
               <img :src="image.url" alt="" class="batch-thumb" />
@@ -560,9 +563,17 @@ function download() {
               }}</span>
             </div>
           </div>
-          <div v-else class="preview-placeholder">
-            <Icon :name="pdf ? 'Files' : 'Image'" :size="38" />
-            <p>设置完成后，点击生成查看预览</p>
+          <div v-else class="batch-source-preview">
+            <h2>已选图片 · {{ images.length }} 张</h2>
+            <p>
+              按左侧顺序生成{{ pdf ? " PDF" : print ? "打印排版" : "拼接图" }}
+            </p>
+            <div class="image-source-grid">
+              <figure v-for="(image, index) in images" :key="image.id">
+                <img :src="image.url" :alt="image.name" />
+                <figcaption>{{ index + 1 }}. {{ image.name }}</figcaption>
+              </figure>
+            </div>
           </div>
         </div>
       </div>

@@ -374,200 +374,216 @@ onUnmounted(dispose);
           更换图片
         </button>
       </div>
-      <div class="picture-controls">
-        <template v-if="isCrop">
-          <label class="field-label"
-            >裁剪预设<select
-              v-model="preset"
-              :disabled="busy"
-              aria-label="裁剪预设"
-              @change="applyPreset"
-            >
-              <option value="free">自定义</option>
-              <option value="original">原图比例</option>
-              <option value="1">正方形 1:1</option>
-              <option :value="String(4 / 3)">4:3</option>
-              <option :value="String(16 / 9)">16:9</option>
-              <option :value="String(9 / 16)">9:16</option>
-            </select></label
-          >
-          <label
-            v-for="field in [
-              { key: 'x', name: '左侧 X' },
-              { key: 'y', name: '顶部 Y' },
-              { key: 'width', name: '裁剪宽度' },
-              { key: 'height', name: '裁剪高度' },
-            ] as const"
-            :key="field.key"
-            class="field-label"
-            >{{ field.name }}（px）<input
-              :value="crop[field.key]"
-              type="number"
-              :min="field.key === 'x' || field.key === 'y' ? 0 : 1"
-              :disabled="busy"
-              @input="
-                changeCrop(field.key, ($event.target as HTMLInputElement).value)
-              "
-          /></label>
-          <label class="field-label"
-            >旋转<select
-              v-model.number="rotation"
-              aria-label="旋转角度"
-              :disabled="busy"
-            >
-              <option :value="0">不旋转</option>
-              <option :value="90">顺时针 90°</option>
-              <option :value="180">180°</option>
-              <option :value="270">逆时针 90°</option>
-            </select></label
-          >
-          <div class="flip-options">
-            <label class="check-label"
-              ><input
-                v-model="flipX"
-                type="checkbox"
+      <div class="media-workbench">
+        <aside class="media-settings">
+          <div class="picture-controls">
+            <template v-if="isCrop">
+              <label class="field-label"
+                >裁剪预设<select
+                  v-model="preset"
+                  :disabled="busy"
+                  aria-label="裁剪预设"
+                  @change="applyPreset"
+                >
+                  <option value="free">自定义</option>
+                  <option value="original">原图比例</option>
+                  <option value="1">正方形 1:1</option>
+                  <option :value="String(4 / 3)">4:3</option>
+                  <option :value="String(16 / 9)">16:9</option>
+                  <option :value="String(9 / 16)">9:16</option>
+                </select></label
+              >
+              <label
+                v-for="field in [
+                  { key: 'x', name: '左侧 X' },
+                  { key: 'y', name: '顶部 Y' },
+                  { key: 'width', name: '裁剪宽度' },
+                  { key: 'height', name: '裁剪高度' },
+                ] as const"
+                :key="field.key"
+                class="field-label"
+                >{{ field.name }}（px）<input
+                  :value="crop[field.key]"
+                  type="number"
+                  :min="field.key === 'x' || field.key === 'y' ? 0 : 1"
+                  :disabled="busy"
+                  @input="
+                    changeCrop(
+                      field.key,
+                      ($event.target as HTMLInputElement).value,
+                    )
+                  "
+              /></label>
+              <label class="field-label"
+                >旋转<select
+                  v-model.number="rotation"
+                  aria-label="旋转角度"
+                  :disabled="busy"
+                >
+                  <option :value="0">不旋转</option>
+                  <option :value="90">顺时针 90°</option>
+                  <option :value="180">180°</option>
+                  <option :value="270">逆时针 90°</option>
+                </select></label
+              >
+              <div class="flip-options">
+                <label class="check-label"
+                  ><input
+                    v-model="flipX"
+                    type="checkbox"
+                    :disabled="busy"
+                  />左右镜像</label
+                ><label class="check-label"
+                  ><input
+                    v-model="flipY"
+                    type="checkbox"
+                    :disabled="busy"
+                  />上下镜像</label
+                >
+              </div>
+            </template>
+            <template v-else>
+              <label class="field-label watermark-text"
+                >水印文字<input v-model="text" maxlength="80" :disabled="busy"
+              /></label>
+              <label class="field-label"
+                >布局<select
+                  v-model="pattern"
+                  :disabled="busy"
+                  aria-label="水印布局"
+                >
+                  <option value="tile">平铺</option>
+                  <option value="single">单处水印</option>
+                </select></label
+              >
+              <label class="field-label"
+                >字号（px）<input
+                  v-model.number="fontSize"
+                  type="number"
+                  min="12"
+                  max="400"
+                  :disabled="busy"
+              /></label>
+              <label class="field-label"
+                >颜色<input v-model="color" type="color" :disabled="busy"
+              /></label>
+              <label class="field-label"
+                >透明度 {{ opacity }}%<input
+                  v-model.number="opacity"
+                  type="range"
+                  min="10"
+                  max="100"
+                  :disabled="busy"
+              /></label>
+              <label v-if="pattern === 'tile'" class="field-label"
+                >倾斜 {{ angle }}°<input
+                  v-model.number="angle"
+                  type="range"
+                  min="-45"
+                  max="45"
+                  :disabled="busy"
+              /></label>
+              <label v-else class="field-label"
+                >水印位置<select
+                  v-model="position"
+                  :disabled="busy"
+                  aria-label="水印位置"
+                >
+                  <option value="bottom-right">右下</option>
+                  <option value="bottom-left">左下</option>
+                  <option value="center">居中</option>
+                  <option value="top-left">左上</option>
+                  <option value="top-right">右上</option>
+                </select></label
+              >
+            </template>
+            <label class="field-label"
+              >输出格式<select
+                v-model="format"
                 :disabled="busy"
-              />左右镜像</label
-            ><label class="check-label"
-              ><input
-                v-model="flipY"
-                type="checkbox"
-                :disabled="busy"
-              />上下镜像</label
+                aria-label="输出格式"
+              >
+                <option value="image/png">PNG</option>
+                <option value="image/jpeg">JPG</option>
+                <option value="image/webp">WebP</option>
+              </select></label
             >
           </div>
-        </template>
-        <template v-else>
-          <label class="field-label watermark-text"
-            >水印文字<input v-model="text" maxlength="80" :disabled="busy"
-          /></label>
-          <label class="field-label"
-            >布局<select
-              v-model="pattern"
-              :disabled="busy"
-              aria-label="水印布局"
+          <div class="action-row">
+            <button
+              class="button primary"
+              :disabled="busy || !!cropError"
+              @click="generate"
             >
-              <option value="tile">平铺</option>
-              <option value="single">单处水印</option>
-            </select></label
-          >
-          <label class="field-label"
-            >字号（px）<input
-              v-model.number="fontSize"
-              type="number"
-              min="12"
-              max="400"
-              :disabled="busy"
-          /></label>
-          <label class="field-label"
-            >颜色<input v-model="color" type="color" :disabled="busy"
-          /></label>
-          <label class="field-label"
-            >透明度 {{ opacity }}%<input
-              v-model.number="opacity"
-              type="range"
-              min="10"
-              max="100"
-              :disabled="busy"
-          /></label>
-          <label v-if="pattern === 'tile'" class="field-label"
-            >倾斜 {{ angle }}°<input
-              v-model.number="angle"
-              type="range"
-              min="-45"
-              max="45"
-              :disabled="busy"
-          /></label>
-          <label v-else class="field-label"
-            >水印位置<select
-              v-model="position"
-              :disabled="busy"
-              aria-label="水印位置"
+              {{ busy ? "正在生成…" : "生成图片"
+              }}<Icon name="ArrowRight" :size="16" /></button
+            ><button
+              class="button secondary"
+              :disabled="!output"
+              @click="download"
             >
-              <option value="bottom-right">右下</option>
-              <option value="bottom-left">左下</option>
-              <option value="center">居中</option>
-              <option value="top-left">左上</option>
-              <option value="top-right">右上</option>
-            </select></label
-          >
-        </template>
-        <label class="field-label"
-          >输出格式<select
-            v-model="format"
-            :disabled="busy"
-            aria-label="输出格式"
-          >
-            <option value="image/png">PNG</option>
-            <option value="image/jpeg">JPG</option>
-            <option value="image/webp">WebP</option>
-          </select></label
-        >
-      </div>
-      <div class="picture-previews">
-        <section>
-          <h2>{{ isCrop ? "原图与裁剪区域" : "原图" }}</h2>
-          <div
-            v-if="isCrop"
-            class="crop-stage"
-            :style="{
-              aspectRatio: dimensions.width + '/' + dimensions.height,
-              maxWidth:
-                Math.min(700, (420 * dimensions.width) / dimensions.height) +
-                'px',
-            }"
-          >
-            <img :src="originalUrl" alt="待裁剪图片" draggable="false" />
-            <div
-              v-if="!cropError"
-              class="crop-selection"
-              :style="selectionStyle"
-              @pointerdown="startDrag"
-              @pointermove="moveDrag"
-              @pointerup="drag = undefined"
-              @pointercancel="drag = undefined"
-              @lostpointercapture="drag = undefined"
-            >
-              <span>拖动选区</span>
-            </div>
+              <Icon name="Download" :size="16" />下载图片
+            </button>
           </div>
-          <img
-            v-else
-            class="picture-preview-image"
-            :src="originalUrl"
-            alt="原图"
-          />
-        </section>
-        <section>
-          <h2>
-            输出预览<span v-if="output" class="muted"
-              >{{ outputDimensions.width }} × {{ outputDimensions.height }} ·
-              {{ formatBytes(output.size) }}</span
-            >
-          </h2>
-          <img
-            v-if="resultUrl"
-            class="picture-preview-image"
-            :src="resultUrl"
-            alt="处理后的图片"
-          />
-          <div v-else class="picture-placeholder">
-            <Icon :name="isCrop ? 'Crop' : 'Stamp'" :size="42" />
-            <p>点击“生成图片”查看结果</p>
+        </aside>
+        <div class="media-canvas">
+          <div class="picture-previews">
+            <section>
+              <h2>{{ isCrop ? "原图与裁剪区域" : "原图" }}</h2>
+              <div
+                v-if="isCrop"
+                class="crop-stage"
+                :style="{
+                  aspectRatio: dimensions.width + '/' + dimensions.height,
+                  maxWidth:
+                    Math.min(
+                      700,
+                      (420 * dimensions.width) / dimensions.height,
+                    ) + 'px',
+                }"
+              >
+                <img :src="originalUrl" alt="待裁剪图片" draggable="false" />
+                <div
+                  v-if="!cropError"
+                  class="crop-selection"
+                  :style="selectionStyle"
+                  @pointerdown="startDrag"
+                  @pointermove="moveDrag"
+                  @pointerup="drag = undefined"
+                  @pointercancel="drag = undefined"
+                  @lostpointercapture="drag = undefined"
+                >
+                  <span>拖动选区</span>
+                </div>
+              </div>
+              <img
+                v-else
+                class="picture-preview-image"
+                :src="originalUrl"
+                alt="原图"
+              />
+            </section>
+            <section>
+              <h2>
+                输出预览<span v-if="output" class="muted"
+                  >{{ outputDimensions.width }} ×
+                  {{ outputDimensions.height }} ·
+                  {{ formatBytes(output.size) }}</span
+                >
+              </h2>
+              <img
+                v-if="resultUrl"
+                class="picture-preview-image"
+                :src="resultUrl"
+                alt="处理后的图片"
+              />
+              <div v-else class="picture-placeholder">
+                <Icon :name="isCrop ? 'Crop' : 'Stamp'" :size="42" />
+                <p>点击“生成图片”查看结果</p>
+              </div>
+            </section>
           </div>
-        </section>
-      </div>
-      <div class="action-row">
-        <button
-          class="button primary"
-          :disabled="busy || !!cropError"
-          @click="generate"
-        >
-          {{ busy ? "正在生成…" : "生成图片"
-          }}<Icon name="ArrowRight" :size="16" /></button
-        ><button class="button secondary" :disabled="!output" @click="download">
-          <Icon name="Download" :size="16" />下载图片
-        </button>
+        </div>
       </div>
     </template>
     <p v-if="error || cropError" role="alert" class="error-message">

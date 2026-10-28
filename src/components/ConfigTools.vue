@@ -74,12 +74,19 @@ watch([input, direction, entityMode], cancel);
 <template>
   <div class="tool-workspace">
     <div class="tool-toolbar">
-      <label v-if="toolId === 'yaml-json'" class="inline-label"
-        >转换方向<select v-model="direction" aria-label="转换方向">
-          <option value="to-json">YAML → JSON</option>
-          <option value="to-yaml">JSON → YAML</option>
-        </select></label
-      >
+      <div v-if="toolId === 'yaml-json'" class="mode-buttons">
+        <button
+          :class="{ active: direction === 'to-json' }"
+          @click="direction = 'to-json'"
+        >
+          YAML → JSON</button
+        ><button
+          :class="{ active: direction === 'to-yaml' }"
+          @click="direction = 'to-yaml'"
+        >
+          JSON → YAML
+        </button>
+      </div>
       <div v-else-if="toolId === 'html-entities'" class="segmented">
         <button
           :class="{ active: entityMode === 'encode' }"
@@ -101,50 +108,65 @@ watch([input, direction, entityMode], cancel);
         </button>
       </div>
     </div>
-    <template v-if="toolId === 'jwt'">
-      <div class="settings-panel">
-        <label class="field-label"
-          >JWT 令牌<textarea
-            v-model="input"
-            rows="3"
-            spellcheck="false"
-            placeholder="粘贴完整 JWT，可带 Bearer 前缀"
-          ></textarea>
-        </label>
-        <p class="notice-line">
-          <Icon
-            name="Info"
-            :size="16"
-          />仅解码，未验证签名；不能据此判断令牌可信或登录有效。
+    <template v-if="toolId === 'jwt'"
+      ><div class="jwt-workbench">
+        <div class="settings-panel">
+          <label class="field-label"
+            >JWT 令牌<textarea
+              v-model="input"
+              rows="3"
+              spellcheck="false"
+              placeholder="粘贴完整 JWT，可带 Bearer 前缀"
+            ></textarea>
+          </label>
+          <p class="notice-line">
+            <Icon
+              name="Info"
+              :size="16"
+            />仅解码，未验证签名；不能据此判断令牌可信或登录有效。
+          </p>
+        </div>
+        <p v-if="jwt.error" role="alert" class="error-message">
+          {{ jwt.error }}
         </p>
-      </div>
-      <p v-if="jwt.error" role="alert" class="error-message">{{ jwt.error }}</p>
-      <div class="editor-grid">
-        <EditorPanel
-          :model-value="jwt.data?.header || ''"
-          title="Header"
-          filename="jwt-header.json"
-          readonly
-          code
-        /><EditorPanel
-          :model-value="jwt.data?.payload || ''"
-          title="Payload"
-          filename="jwt-payload.json"
-          readonly
-          code
-        />
-      </div>
-      <div v-if="jwt.data?.times.length" class="settings-panel">
-        <dl class="detail-list">
-          <div v-for="time in jwt.data.times" :key="time.key">
-            <dt>{{ time.label }}</dt>
-            <dd>{{ time.value }}</dd>
-            <span class="muted">{{ time.key }}</span>
-          </div>
-        </dl>
-      </div>
-    </template>
+
+        <div class="editor-grid jwt-results">
+          <EditorPanel
+            :model-value="jwt.data?.header || ''"
+            title="Header"
+            filename="jwt-header.json"
+            readonly
+            code
+          /><EditorPanel
+            :model-value="jwt.data?.payload || ''"
+            title="Payload"
+            filename="jwt-payload.json"
+            readonly
+            code
+          />
+        </div>
+        <div v-if="jwt.data?.times.length" class="settings-panel">
+          <dl class="detail-list">
+            <div v-for="time in jwt.data.times" :key="time.key">
+              <dt>{{ time.label }}</dt>
+              <dd>{{ time.value }}</dd>
+              <span class="muted">{{ time.key }}</span>
+            </div>
+          </dl>
+        </div>
+      </div></template
+    >
     <template v-else>
+      <div v-if="toolId === 'yaml-json'" class="action-row">
+        <button
+          class="button primary"
+          :disabled="busy"
+          @click="run({ source: input, toJson: direction === 'to-json' })"
+        >
+          {{ busy ? "正在转换…" : "开始转换"
+          }}<Icon name="ArrowRight" :size="16" />
+        </button>
+      </div>
       <div class="editor-grid">
         <EditorPanel
           v-model="input"
@@ -178,16 +200,7 @@ watch([input, direction, entityMode], cancel);
       >
         {{ toolId === "yaml-json" ? error : entities.error }}
       </p>
-      <div v-if="toolId === 'yaml-json'" class="action-row">
-        <button
-          class="button primary"
-          :disabled="busy"
-          @click="run({ source: input, toJson: direction === 'to-json' })"
-        >
-          {{ busy ? "正在转换…" : "开始转换"
-          }}<Icon name="ArrowRight" :size="16" />
-        </button>
-      </div>
+
       <div class="workspace-footnote">
         <Icon name="Info" :size="15" /><span>{{
           toolId === "yaml-json"

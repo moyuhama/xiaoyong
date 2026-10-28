@@ -108,23 +108,6 @@ function process() {
         </button>
       </div>
     </div>
-    <div class="editor-grid">
-      <EditorPanel
-        v-model="input"
-        :title="sql ? '输入 SQL' : '输入汉字'"
-        :placeholder="
-          sql ? '粘贴 SQL 语句…' : '输入汉字，可保留英文、数字与换行…'
-        "
-        code
-      /><EditorPanel
-        :model-value="result || ''"
-        title="处理结果"
-        readonly
-        code
-        :filename="sql ? 'formatted.sql' : 'pinyin.txt'"
-        placeholder="点击下方按钮生成结果"
-      />
-    </div>
     <div class="action-row">
       <button class="button primary" :disabled="busy" @click="process">
         <Icon
@@ -136,6 +119,25 @@ function process() {
         取消
       </button>
     </div>
+    <div class="editor-grid">
+      <EditorPanel
+        v-model="input"
+        :title="sql ? '输入 SQL' : '输入汉字'"
+        :placeholder="
+          sql ? '粘贴 SQL 语句…' : '输入汉字，可保留英文、数字与换行…'
+        "
+        :code="sql"
+        :language="sql ? 'sql' : ''"
+      /><EditorPanel
+        :model-value="result || ''"
+        title="处理结果"
+        readonly
+        code
+        :filename="sql ? 'formatted.sql' : 'pinyin.txt'"
+        placeholder="点击上方按钮生成结果"
+      />
+    </div>
+
     <p v-if="error" class="error-message" role="alert">{{ error }}</p>
     <div class="workspace-footnote">
       <Icon name="Info" :size="15" />{{

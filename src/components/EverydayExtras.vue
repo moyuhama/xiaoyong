@@ -46,6 +46,27 @@ const conversion = computed(() => {
     };
   }
 });
+const allUnits = computed(() =>
+  group.value.units.map((unit) => {
+    try {
+      return {
+        name: unit.name,
+        value: amount.value.trim()
+          ? formatNumber(
+              convertUnit(
+                readNumber(amount.value),
+                groupId.value,
+                fromId.value,
+                unit.id,
+              ),
+            )
+          : "—",
+      };
+    } catch {
+      return { name: unit.name, value: "—" };
+    }
+  }),
+);
 function swapUnits() {
   const result = conversion.value.result;
   [fromId.value, toId.value] = [toId.value, fromId.value];
@@ -142,13 +163,17 @@ watch([candidates, count], () => {
   <div class="tool-workspace">
     <template v-if="toolId === 'unit-converter'">
       <div class="tool-toolbar">
-        <label class="inline-label"
-          >换算类型<select v-model="groupId">
-            <option v-for="item in unitGroups" :key="item.id" :value="item.id">
-              {{ item.name }}
-            </option>
-          </select></label
-        ><button class="text-button" @click="amount = '1'">重置数值</button>
+        <div class="mode-buttons" aria-label="换算类型">
+          <button
+            v-for="item in unitGroups"
+            :key="item.id"
+            :class="{ active: groupId === item.id }"
+            @click="groupId = item.id"
+          >
+            {{ item.name }}
+          </button>
+        </div>
+        <button class="text-button" @click="amount = '1'">重置数值</button>
       </div>
       <div class="calculator-panel">
         <label class="field-label"
@@ -204,6 +229,18 @@ watch([candidates, count], () => {
             <Icon name="Copy" :size="15" />复制结果
           </button>
         </div>
+      </div>
+      <div class="unit-overview">
+        <button
+          v-for="unit in allUnits"
+          :key="unit.name"
+          :disabled="unit.value === '—'"
+          @click="copy(unit.value)"
+        >
+          <span>{{ unit.name }}</span
+          ><strong>{{ unit.value }}</strong
+          ><span>点击复制</span>
+        </button>
       </div>
       <div class="workspace-footnote">
         <Icon name="Info" :size="15" /><span>{{
@@ -297,19 +334,6 @@ watch([candidates, count], () => {
           </button>
         </div>
       </div>
-      <div class="editor-grid">
-        <EditorPanel
-          v-model="candidates"
-          title="候选名单"
-          placeholder="每行填写一个名字或选项…"
-        /><EditorPanel
-          :model-value="drawn.join('\n')"
-          title="抽取结果"
-          placeholder="抽到的选项会显示在这里"
-          filename="draw-result.txt"
-          readonly
-        />
-      </div>
       <div class="action-row">
         <label class="inline-label"
           >抽取数量<input
@@ -324,6 +348,20 @@ watch([candidates, count], () => {
           }}
         </button>
       </div>
+      <div class="editor-grid">
+        <EditorPanel
+          v-model="candidates"
+          title="候选名单"
+          placeholder="每行填写一个名字或选项…"
+        /><EditorPanel
+          :model-value="drawn.join('\n')"
+          title="抽取结果"
+          placeholder="抽到的选项会显示在这里"
+          filename="draw-result.txt"
+          readonly
+        />
+      </div>
+
       <p v-if="drawError" role="alert" class="error-message">{{ drawError }}</p>
       <div class="workspace-footnote">
         <Icon

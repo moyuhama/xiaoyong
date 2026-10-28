@@ -149,12 +149,19 @@ onUnmounted(cancelPreview);
         </button>
       </div>
       <div v-else class="toolbar-options">
-        <label class="inline-label"
-          >转换方向<select v-model="csvMode">
-            <option value="to-json">CSV → JSON</option>
-            <option value="to-csv">JSON → CSV</option>
-          </select></label
-        >
+        <div class="mode-buttons">
+          <button
+            :class="{ active: csvMode === 'to-json' }"
+            @click="csvMode = 'to-json'"
+          >
+            CSV → JSON</button
+          ><button
+            :class="{ active: csvMode === 'to-csv' }"
+            @click="csvMode = 'to-csv'"
+          >
+            JSON → CSV
+          </button>
+        </div>
         <label class="inline-label"
           >分隔符<select v-model="delimiter">
             <option value=",">逗号 ,</option>
@@ -170,41 +177,6 @@ onUnmounted(cancelPreview);
         </button>
       </div>
     </div>
-    <div class="editor-grid content-editor-grid">
-      <EditorPanel
-        v-model="input"
-        :title="
-          toolId === 'markdown'
-            ? 'Markdown 内容'
-            : csvMode === 'to-json'
-              ? 'CSV 内容'
-              : 'JSON 内容'
-        "
-        placeholder="在这里粘贴内容，或先试试示例…"
-        code
-      />
-      <section
-        v-if="toolId === 'markdown' && previewMode === 'preview'"
-        class="markdown-panel"
-      >
-        <div class="panel-heading">
-          <h2>预览效果</h2>
-          <span v-if="busy" role="status" class="muted">正在更新…</span>
-        </div>
-        <div v-if="html" class="markdown-body" v-html="html"></div>
-        <p v-else class="preview-empty">输入 Markdown，预览会自动更新</p>
-      </section>
-      <EditorPanel
-        v-else
-        :model-value="toolId === 'markdown' ? html : result"
-        :title="toolId === 'markdown' ? 'HTML 源码' : '转换结果'"
-        :filename="toolId === 'markdown' ? 'preview.html' : outputName"
-        placeholder="转换结果会显示在这里"
-        readonly
-        code
-      />
-    </div>
-    <div v-if="error" role="alert" class="error-message">{{ error }}</div>
     <div v-if="toolId === 'markdown'" class="action-row">
       <button
         class="button secondary"
@@ -242,6 +214,42 @@ onUnmounted(cancelPreview);
         />防止表格执行公式</label
       >
     </div>
+    <div class="editor-grid content-editor-grid">
+      <EditorPanel
+        v-model="input"
+        :title="
+          toolId === 'markdown'
+            ? 'Markdown 内容'
+            : csvMode === 'to-json'
+              ? 'CSV 内容'
+              : 'JSON 内容'
+        "
+        placeholder="在这里粘贴内容，或先试试示例…"
+        code
+      />
+      <section
+        v-if="toolId === 'markdown' && previewMode === 'preview'"
+        class="markdown-panel"
+      >
+        <div class="panel-heading">
+          <h2>预览效果</h2>
+          <span v-if="busy" role="status" class="muted">正在更新…</span>
+        </div>
+        <div v-if="html" class="markdown-body" v-html="html"></div>
+        <p v-else class="preview-empty">输入 Markdown，预览会自动更新</p>
+      </section>
+      <EditorPanel
+        v-else
+        :model-value="toolId === 'markdown' ? html : result"
+        :title="toolId === 'markdown' ? 'HTML 源码' : '转换结果'"
+        :filename="toolId === 'markdown' ? 'preview.html' : outputName"
+        placeholder="转换结果会显示在这里"
+        readonly
+        code
+      />
+    </div>
+    <div v-if="error" role="alert" class="error-message">{{ error }}</div>
+
     <div class="workspace-footnote">
       <Icon name="Info" :size="15" />
       <span v-if="toolId === 'markdown'"

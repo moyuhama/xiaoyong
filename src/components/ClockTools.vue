@@ -3,8 +3,9 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import Icon from "./Icon.vue";
 import { worldCities, zonedTime, durationText } from "../lib/time-tools";
 import { parseDateInput } from "../lib/transform";
-import { copy, notify } from "../lib/ui";
+import { copy, notify, downloadText } from "../lib/ui";
 const props = defineProps<{ toolId: string }>();
+const clockView = ref("table");
 const now = ref(Date.now()),
   reference = ref(""),
   fixed = ref(false),
@@ -195,7 +196,77 @@ onUnmounted(() => clearInterval(interval));
       <p v-if="referenceValue.error" role="alert" class="error-message">
         {{ referenceValue.error }}
       </p>
-      <div class="world-clock-grid">
+      <div class="tool-toolbar">
+        <div class="mode-buttons">
+          <button
+            :class="{ active: clockView === 'table' }"
+            @click="clockView = 'table'"
+          >
+            时区对照表</button
+          ><button
+            :class="{ active: clockView === 'cards' }"
+            @click="clockView = 'cards'"
+          >
+            时钟卡片
+          </button>
+        </div>
+        <button
+          class="text-button"
+          :disabled="!cards.length"
+          @click="
+            copy(
+              cards
+                .map(
+                  (c) => c.name + ' ' + c.date + ' ' + c.time + ' ' + c.offset,
+                )
+                .join('\n'),
+            )
+          "
+        >
+          复制全部时间
+        </button>
+      </div>
+      <div v-if="clockView === 'table'" class="clock-compare-table">
+        <table>
+          <thead>
+            <tr>
+              <th>城市</th>
+              <th>时间</th>
+              <th>日期</th>
+              <th>时区偏移</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="city in cards" :key="city.zone">
+              <td>{{ city.name }}</td>
+              <td>
+                <strong>{{ city.time }}</strong>
+              </td>
+              <td>{{ city.date }} {{ city.weekday }}</td>
+              <td>{{ city.offset }}</td>
+              <td>
+                <button
+                  class="text-button"
+                  @click="copy(city.date + ' ' + city.time + ' ' + city.zone)"
+                >
+                  复制</button
+                ><button
+                  class="text-button"
+                  :aria-label="'移除城市 ' + city.name"
+                  @click="
+                    selected = selected.filter((z) => z !== city.zone);
+                    addZone = available[0]?.zone || '';
+                  "
+                >
+                  移除
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else class="world-clock-grid">
         <article v-for="city in cards" :key="city.zone" class="city-clock">
           <div class="city-heading">
             <h2>{{ city.name }}</h2>
@@ -271,7 +342,7 @@ onUnmounted(() => clearInterval(interval));
           </div>
           <div class="preset-row">
             <button
-              v-for="value in [5, 15, 25]"
+              v-for="value in [1, 3, 5, 10, 15, 25, 30, 60]"
               :key="value"
               class="button secondary"
               :disabled="status === 'running' || status === 'paused'"
@@ -324,6 +395,26 @@ onUnmounted(() => clearInterval(interval));
           </button>
         </div>
         <p v-if="error" role="alert" class="inline-error">{{ error }}</p>
+        <button
+          v-if="laps.length"
+          class="text-button"
+          @click="
+            downloadText(
+              laps
+                .map(
+                  (value, index) =>
+                    '第 ' +
+                    (laps.length - index) +
+                    ' 圈：' +
+                    durationText(value, true),
+                )
+                .join('\n'),
+              'laps.txt',
+            )
+          "
+        >
+          导出计圈记录
+        </button>
         <ol v-if="laps.length" class="lap-list">
           <li v-for="(value, index) in laps" :key="laps.length - index">
             <span>第 {{ laps.length - index }} 圈</span

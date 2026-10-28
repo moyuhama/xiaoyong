@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import EditorPanel from "./EditorPanel.vue";
 import Icon from "./Icon.vue";
 import { useWorkerTask } from "../lib/worker-task";
@@ -110,6 +110,18 @@ const { result, busy, error, run, cancel } = useWorkerTask<TextOptions, string>(
   10000,
 );
 watch([input, second, mode, path], cancel);
+async function selectMode(value: string) {
+  mode.value = value;
+  await nextTick();
+  if (input.value.trim())
+    await run({
+      kind: props.toolId,
+      input: input.value,
+      second: second.value,
+      mode: mode.value,
+      path: path.value,
+    });
+}
 function example() {
   input.value = selected.value?.example || "";
   if (props.toolId === "json-compare")
@@ -166,6 +178,7 @@ const controlNames = [
   "RS",
   "US",
 ];
+const asciiGroup = ref("all");
 const asciiRows = computed(() =>
   Array.from({ length: 128 }, (_, code) => ({
     code,
@@ -179,13 +192,21 @@ const asciiRows = computed(() =>
           : code === 127
             ? "DEL"
             : String.fromCharCode(code),
-  })).filter(
-    (row) =>
-      !query.value.trim() ||
-      [String(row.code), "0x" + row.hex, row.char].some((v) =>
-        v.toLowerCase().includes(query.value.trim().toLowerCase()),
-      ),
-  ),
+  }))
+    .filter(
+      (row) =>
+        asciiGroup.value === "all" ||
+        (asciiGroup.value === "printable"
+          ? row.code >= 32 && row.code < 127
+          : row.code < 32 || row.code === 127),
+    )
+    .filter(
+      (row) =>
+        !query.value.trim() ||
+        [String(row.code), "0x" + row.hex, row.char].some((v) =>
+          v.toLowerCase().includes(query.value.trim().toLowerCase()),
+        ),
+    ),
 );
 function exportAscii() {
   const csv = asciiRows.value
@@ -207,6 +228,23 @@ function exportAscii() {
             v-model="query"
             placeholder="如 A、65、0x41、TAB" /></label
         ><button class="button secondary" @click="exportAscii">下载码表</button>
+      </div>
+      <div class="tool-toolbar">
+        <div class="mode-buttons">
+          <button
+            v-for="[value, name] in [
+              ['all', '全部字符'],
+              ['printable', '可打印字符'],
+              ['control', '控制字符'],
+            ]"
+            :key="value"
+            :class="{ active: asciiGroup === value }"
+            @click="asciiGroup = value!"
+          >
+            {{ name }}
+          </button>
+        </div>
+        <span class="muted">{{ asciiRows.length }} 项</span>
       </div>
       <div class="data-table-scroll">
         <table class="data-table">
@@ -248,17 +286,24 @@ function exportAscii() {
     <template v-else>
       <div class="tool-toolbar">
         <div class="toolbar-options">
-          <label v-if="selected?.options" class="inline-label"
-            >处理方式<select v-model="mode">
-              <option
-                v-for="[value, label] in selected.options"
-                :key="value"
-                :value="value"
-              >
-                {{ label }}
-              </option>
-            </select></label
-          ><label v-if="toolId === 'json-query'" class="inline-label"
+          <div
+            v-if="selected?.options"
+            class="mode-buttons"
+            role="group"
+            aria-label="处理方式"
+          >
+            <button
+              v-for="[value, label] in selected.options"
+              :key="value"
+              :class="{ active: mode === value }"
+              :aria-pressed="mode === value"
+              :disabled="busy"
+              @click="selectMode(value)"
+            >
+              {{ label }}
+            </button>
+          </div>
+          <label v-if="toolId === 'json-query'" class="inline-label"
             >查询路径<input v-model="path" placeholder="$.users[*].name"
           /></label>
         </div>
@@ -276,28 +321,6 @@ function exportAscii() {
             <Icon name="RotateCcw" :size="17" />
           </button>
         </div>
-      </div>
-      <div class="editor-grid">
-        <EditorPanel
-          v-model="input"
-          :title="toolId === 'json-compare' ? '原始 JSON' : '输入内容'"
-          code
-          placeholder="粘贴需要处理的内容…"
-        /><EditorPanel
-          v-if="toolId === 'json-compare'"
-          v-model="second"
-          title="对比 JSON"
-          code
-          placeholder="粘贴另一份 JSON…"
-        /><EditorPanel
-          v-else
-          :model-value="result || ''"
-          title="处理结果"
-          readonly
-          code
-          :filename="filename"
-          placeholder="结果会显示在这里"
-        />
       </div>
       <div class="action-row">
         <button
@@ -318,10 +341,52 @@ function exportAscii() {
                   ? "查询"
                   : "开始处理"
           }}</button
+        ><button
+          v-if="result && toolId !== 'json-compare'"
+          class="button secondary"
+          @click="
+            input = result;
+            cancel();
+          "
+        >
+          结果用作输入</button
         ><button v-if="busy" class="button secondary" @click="cancel">
           取消
         </button>
       </div>
+      <div class="editor-grid">
+        <EditorPanel
+          v-model="input"
+          :title="toolId === 'json-compare' ? '原始 JSON' : '输入内容'"
+          :language="
+            toolId.startsWith('json-')
+              ? 'json'
+              : toolId === 'code-format'
+                ? mode
+                : toolId === 'xml'
+                  ? 'xml'
+                  : ''
+          "
+          code
+          placeholder="粘贴需要处理的内容…"
+        /><EditorPanel
+          v-if="toolId === 'json-compare'"
+          v-model="second"
+          title="对比 JSON"
+          code
+          placeholder="粘贴另一份 JSON…"
+        /><EditorPanel
+          v-else
+          :model-value="result || ''"
+          title="处理结果"
+          readonly
+          code
+          :filename="filename"
+          placeholder="结果会显示在这里"
+          :language="toolId === 'code-format' ? mode : filename"
+        />
+      </div>
+
       <EditorPanel
         v-if="toolId === 'json-compare'"
         :model-value="result || ''"

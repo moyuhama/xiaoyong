@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import EditorPanel from "./EditorPanel.vue";
 import Icon from "./Icon.vue";
+import { copy } from "../lib/ui";
 import { moneyUppercase, randomNumbers } from "../lib/more-tools";
 const props = defineProps<{ toolId: string }>();
 const money = computed(() => props.toolId === "money-uppercase");
@@ -44,6 +45,16 @@ function generate() {
     <div class="generator-grid">
       <div class="settings-panel">
         <h2>{{ money ? "输入金额" : "生成设置" }}</h2>
+        <div v-if="!money" class="preset-row">
+          <button
+            v-for="n in [1, 5, 10, 50, 100]"
+            :key="n"
+            class="button secondary"
+            @click="count = n"
+          >
+            {{ n }} 个
+          </button>
+        </div>
         <template v-if="money"
           ><label class="field-label"
             >金额（元）<input
@@ -104,7 +115,19 @@ function generate() {
           }}
         </button>
       </div>
+      <section v-if="money" class="calculation-output">
+        <h2>人民币大写</h2>
+        <output>{{ result || "等待输入金额" }}</output
+        ><button
+          class="button secondary"
+          :disabled="!result"
+          @click="copy(result)"
+        >
+          复制大写金额
+        </button>
+      </section>
       <EditorPanel
+        v-else
         :model-value="result"
         title="处理结果"
         readonly

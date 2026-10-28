@@ -54,6 +54,20 @@ async function calculateHash() {
     if (current === generation) busy.value = false;
   }
 }
+const commonBases = computed(() =>
+  [2, 8, 10, 16].map((base) => {
+    try {
+      return {
+        base,
+        value: input.value.trim()
+          ? convertRadix(input.value, fromBase.value, base)
+          : "",
+      };
+    } catch {
+      return { base, value: "" };
+    }
+  }),
+);
 function swapBases() {
   const result = radix.value.result;
   [fromBase.value, toBase.value] = [toBase.value, fromBase.value];
@@ -120,6 +134,13 @@ onUnmounted(() => {
       </div>
     </div>
     <template v-if="toolId !== 'url-parser'">
+      <div v-if="toolId === 'hash'" class="action-row">
+        <button class="button primary" :disabled="busy" @click="calculateHash">
+          <Icon name="Hash" :size="17" />{{
+            busy ? "正在计算…" : "计算哈希"
+          }}</button
+        ><span class="muted">空文本也可以计算</span>
+      </div>
       <div class="editor-grid">
         <EditorPanel
           v-model="input"
@@ -131,8 +152,34 @@ onUnmounted(() => {
           "
           code
         />
+        <section v-if="toolId === 'radix'" class="radix-results">
+          <h2>常用进制结果</h2>
+          <div v-for="item in commonBases" :key="item.base">
+            <label>{{ item.base }} 进制</label
+            ><code>{{ item.value || "—" }}</code
+            ><button
+              class="text-button"
+              :disabled="!item.value"
+              @click="copy(item.value)"
+            >
+              复制
+            </button>
+          </div>
+          <div>
+            <label>{{ toBase }} 进制（所选）</label
+            ><code>{{ radix.result || "—" }}</code
+            ><button
+              class="text-button"
+              :disabled="!radix.result"
+              @click="copy(radix.result)"
+            >
+              复制
+            </button>
+          </div>
+        </section>
         <EditorPanel
-          :model-value="toolId === 'hash' ? digest : radix.result"
+          v-else
+          :model-value="digest"
           :title="toolId === 'hash' ? '哈希结果' : '转换结果'"
           filename="result.txt"
           readonly
@@ -146,13 +193,7 @@ onUnmounted(() => {
       >
         {{ error || radix.error }}
       </div>
-      <div v-if="toolId === 'hash'" class="action-row">
-        <button class="button primary" :disabled="busy" @click="calculateHash">
-          <Icon name="Hash" :size="17" />{{
-            busy ? "正在计算…" : "计算哈希"
-          }}</button
-        ><span class="muted">空文本也可以计算</span>
-      </div>
+
       <div class="workspace-footnote">
         <Icon name="Info" :size="15" /><span>{{
           toolId === "hash"

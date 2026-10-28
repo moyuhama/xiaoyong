@@ -2,6 +2,8 @@
 import { computed, onUnmounted, ref, shallowRef, watch } from "vue";
 import Icon from "./Icon.vue";
 import EditorPanel from "./EditorPanel.vue";
+import PdfPreview from "./PdfPreview.vue";
+const sourcePreview = shallowRef<Blob>();
 import { parsePageRange } from "../lib/pdf-tools";
 import { newCanvas, canvasBlob } from "../lib/image-layout";
 import { downloadBlob, formatBytes } from "../lib/ui";
@@ -64,6 +66,7 @@ async function select(files: FileList | File[] | null) {
   await loadingTask?.destroy();
   doc = undefined;
   name.value = "";
+  sourcePreview.value = undefined;
   pageCount.value = 0;
   reading.value = true;
   const current = version;
@@ -97,6 +100,7 @@ async function select(files: FileList | File[] | null) {
       throw new Error("最多支持 500 页的文件，请先提取需要处理的页面");
     doc = loaded;
     name.value = file.name;
+    sourcePreview.value = file;
     pageCount.value = doc.numPages;
     range.value = "1-" + Math.min(doc.numPages, textMode.value ? 100 : 20);
   } catch (e) {
@@ -270,80 +274,87 @@ async function downloadZip() {
       <small>未加密 PDF · 最多 20 MB、500 页</small>
     </button>
     <template v-else
-      ><div class="settings-panel">
-        <label class="field-label"
-          >处理页码<input
-            v-model="range"
-            :disabled="working"
-            placeholder="例如 1-3, 5"
-        /></label>
-        <p class="muted">
-          默认选中前 {{ textMode ? 100 : 20 }} 页以内的页面，可修改页码范围。
-        </p>
-        <div v-if="!textMode" class="two-fields">
+      ><div class="file-workbench">
+        <div class="settings-panel">
           <label class="field-label"
-            >清晰度<select v-model.number="dpi" :disabled="working">
-              <option :value="72">72 DPI · 预览</option>
-              <option :value="150">150 DPI · 标准</option>
-              <option :value="300">300 DPI · 高清</option>
-            </select></label
-          ><label class="field-label"
-            >图片格式<select v-model="format" :disabled="working">
-              <option value="png">PNG</option>
-              <option value="jpg">JPG</option>
-            </select></label
-          >
-        </div>
-        <div class="toolbar-options">
-          <button class="button primary" :disabled="working" @click="process">
-            <Icon
-              :name="working ? 'LoaderCircle' : 'FileOutput'"
-              :class="{ spin: working }"
-              :size="17"
-            />{{
-              working ? "处理中…" : textMode ? "提取文字" : "转换为图片"
-            }}</button
-          ><button v-if="busy" class="button secondary" @click="clear">
-            取消</button
-          ><span v-if="progress" class="muted" role="status">{{
-            progress
-          }}</span>
-        </div>
-      </div>
-      <EditorPanel
-        v-if="textMode"
-        :model-value="text"
-        title="提取结果"
-        readonly
-        filename="pdf-text.txt"
-        placeholder="提取的文字会显示在这里"
-      /><template v-else-if="images.length"
-        ><div class="tool-toolbar">
-          <span class="muted">{{ images.length }} 张图片</span
-          ><button
-            class="button primary"
-            :disabled="working"
-            @click="downloadZip"
-          >
-            打包下载 ZIP
-          </button>
-        </div>
-        <div class="pdf-image-grid">
-          <article v-for="image in images" :key="image.name">
-            <img :src="image.url" :alt="image.name" />
-            <p>{{ image.name }} · {{ formatBytes(image.blob.size) }}</p>
-            <button
-              class="button secondary"
+            >处理页码<input
+              v-model="range"
               :disabled="working"
-              :aria-label="'下载 ' + image.name"
-              @click="downloadBlob(image.blob, image.name)"
+              placeholder="例如 1-3, 5"
+          /></label>
+          <p class="muted">
+            默认选中前 {{ textMode ? 100 : 20 }} 页以内的页面，可修改页码范围。
+          </p>
+          <div v-if="!textMode" class="two-fields">
+            <label class="field-label"
+              >清晰度<select v-model.number="dpi" :disabled="working">
+                <option :value="72">72 DPI · 预览</option>
+                <option :value="150">150 DPI · 标准</option>
+                <option :value="300">300 DPI · 高清</option>
+              </select></label
+            ><label class="field-label"
+              >图片格式<select v-model="format" :disabled="working">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+              </select></label
             >
-              下载图片
-            </button>
-          </article>
-        </div></template
-      >
-    </template>
+          </div>
+          <div class="toolbar-options">
+            <button class="button primary" :disabled="working" @click="process">
+              <Icon
+                :name="working ? 'LoaderCircle' : 'FileOutput'"
+                :class="{ spin: working }"
+                :size="17"
+              />{{
+                working ? "处理中…" : textMode ? "提取文字" : "转换为图片"
+              }}</button
+            ><button v-if="busy" class="button secondary" @click="clear">
+              取消</button
+            ><span v-if="progress" class="muted" role="status">{{
+              progress
+            }}</span>
+          </div>
+        </div>
+        <section>
+          <PdfPreview
+            v-if="!text && !images.length"
+            :source="sourcePreview"
+          /><EditorPanel
+            v-if="textMode && text"
+            :model-value="text"
+            title="提取结果"
+            readonly
+            filename="pdf-text.txt"
+            placeholder="提取的文字会显示在这里"
+          /><template v-else-if="images.length"
+            ><div class="tool-toolbar">
+              <span class="muted">{{ images.length }} 张图片</span
+              ><button
+                class="button primary"
+                :disabled="working"
+                @click="downloadZip"
+              >
+                打包下载 ZIP
+              </button>
+            </div>
+            <div class="pdf-image-grid">
+              <article v-for="image in images" :key="image.name">
+                <img :src="image.url" :alt="image.name" />
+                <p>{{ image.name }} · {{ formatBytes(image.blob.size) }}</p>
+                <button
+                  class="button secondary"
+                  :disabled="working"
+                  :aria-label="'下载 ' + image.name"
+                  @click="downloadBlob(image.blob, image.name)"
+                >
+                  下载图片
+                </button>
+              </article>
+            </div></template
+          >
+        </section>
+      </div></template
+    >
     <p v-if="error" class="error-message" role="alert">{{ error }}</p>
     <div class="workspace-footnote">
       <Icon name="Info" :size="15" />{{

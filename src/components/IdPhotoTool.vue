@@ -521,6 +521,16 @@ onUnmounted(() => {
         <div class="id-photo-controls">
           <fieldset :disabled="busy">
             <legend>照片规格</legend>
+            <div class="mode-buttons id-size-shortcuts">
+              <button
+                v-for="size in photoSizes.filter((s) => s.group === '通用寸照')"
+                :key="size.id"
+                :class="{ active: sizeId === size.id }"
+                @click="sizeId = size.id"
+              >
+                {{ size.name }}
+              </button>
+            </div>
             <label class="field-label"
               >输出尺寸<select v-model="sizeId" aria-label="证件照尺寸">
                 <optgroup

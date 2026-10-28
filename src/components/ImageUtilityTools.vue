@@ -37,6 +37,17 @@ const hex = computed(() =>
         .toUpperCase()
     : "",
 );
+const pickedColors = ref<string[]>([]);
+watch(hex, (value) => {
+  if (value)
+    pickedColors.value = [
+      value,
+      ...pickedColors.value.filter((c) => c !== value),
+    ].slice(0, 10);
+});
+watch(images, () => {
+  pickedColors.value = [];
+});
 const rgba = computed(() =>
   pixel.value.length
     ? `rgba(${pixel.value[0]}, ${pixel.value[1]}, ${pixel.value[2]}, ${Number((pixel.value[3]! / 255).toFixed(3))})`
@@ -264,6 +275,16 @@ async function generate() {
       </div>
       <div class="settings-panel">
         <h2>选中颜色</h2>
+        <div class="picked-history">
+          <button
+            v-for="value in pickedColors"
+            :key="value"
+            :style="{ background: value }"
+            :aria-label="'复制颜色 ' + value"
+            :title="value"
+            @click="copy(value)"
+          ></button>
+        </div>
         <div
           class="picked-swatch"
           :style="{ background: rgba || 'transparent' }"
@@ -309,6 +330,16 @@ async function generate() {
       <div class="settings-panel">
         <fieldset class="workshop-controls" :disabled="busy || loading">
           <h2>图标设置</h2>
+          <div class="preset-row">
+            <button class="button secondary" @click="sizes = [16, 32, 48]">
+              网站图标</button
+            ><button
+              class="button secondary"
+              @click="sizes = [16, 32, 48, 64, 128, 256]"
+            >
+              全部尺寸
+            </button>
+          </div>
           <p class="field-label">包含尺寸（可多选）</p>
           <div class="ico-sizes">
             <label

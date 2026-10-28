@@ -189,7 +189,22 @@ async function recognize() {
       <small>JPG、PNG、WebP · 最多 20 MB、3200 万像素</small>
     </button>
     <template v-else
-      ><div class="editor-grid">
+      ><div class="action-row">
+        <button class="button primary" :disabled="working" @click="recognize">
+          <Icon
+            :name="working ? 'LoaderCircle' : 'ScanLine'"
+            :class="{ spin: working }"
+            :size="17"
+          />{{ working ? "识别中…" : "开始识别" }}</button
+        ><button
+          v-if="ocrBusy || qr.busy.value"
+          class="button secondary"
+          @click="cancel"
+        >
+          取消</button
+        ><span v-if="progress" class="muted" role="status">{{ progress }}</span>
+      </div>
+      <div class="editor-grid">
         <div class="scan-preview">
           <img :src="images[0]!.url" alt="待识别图片缩略图" />
           <p>
@@ -208,22 +223,7 @@ async function recognize() {
           placeholder="识别后的文字会显示在这里"
         />
       </div>
-      <div class="action-row">
-        <button class="button primary" :disabled="working" @click="recognize">
-          <Icon
-            :name="working ? 'LoaderCircle' : 'ScanLine'"
-            :class="{ spin: working }"
-            :size="17"
-          />{{ working ? "识别中…" : "开始识别" }}</button
-        ><button
-          v-if="ocrBusy || qr.busy.value"
-          class="button secondary"
-          @click="cancel"
-        >
-          取消</button
-        ><span v-if="progress" class="muted" role="status">{{ progress }}</span>
-      </div></template
-    >
+    </template>
     <p
       v-if="uploadError || error || qr.error.value"
       class="error-message"

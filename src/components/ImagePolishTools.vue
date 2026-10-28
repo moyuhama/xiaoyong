@@ -258,7 +258,17 @@ async function generate() {
       <div class="settings-panel">
         <fieldset class="workshop-controls" :disabled="busy || loading">
           <template v-if="barcode"
-            ><label class="field-label"
+            ><div class="mode-buttons">
+              <button
+                v-for="kind in ['CODE128', 'EAN13', 'EAN8', 'UPC']"
+                :key="kind"
+                :class="{ active: codeType === kind }"
+                @click="codeType = kind"
+              >
+                {{ kind }}
+              </button>
+            </div>
+            <label class="field-label"
               >条码内容<input
                 v-model="content"
                 maxlength="100"
@@ -292,7 +302,22 @@ async function generate() {
             ></template
           >
           <template v-else-if="round"
-            ><label class="field-label"
+            ><div class="preset-row">
+              <button
+                v-for="[value, name] in [
+                  [0, '直角'],
+                  [12, '小圆角'],
+                  [25, '大圆角'],
+                  [50, '圆形'],
+                ]"
+                :key="value"
+                class="button secondary"
+                @click="radius = Number(value)"
+              >
+                {{ name }}
+              </button>
+            </div>
+            <label class="field-label"
               >圆角比例 {{ radius }}%<input
                 v-model.number="radius"
                 type="range"
@@ -315,7 +340,21 @@ async function generate() {
               >图片底色<input v-model="background" type="color" /></label
           ></template>
           <template v-else
-            ><label class="field-label"
+            ><div class="mode-buttons">
+              <button
+                v-for="[value, name] in [
+                  ['normal', '原色'],
+                  ['gray', '黑白'],
+                  ['sepia', '复古'],
+                ]"
+                :key="value"
+                :class="{ active: effect === value }"
+                @click="effect = value!"
+              >
+                {{ name }}
+              </button>
+            </div>
+            <label class="field-label"
               >效果<select v-model="effect">
                 <option value="normal">原色</option>
                 <option value="gray">黑白灰度</option>

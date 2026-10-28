@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import EditorPanel from "./EditorPanel.vue";
 import Icon from "./Icon.vue";
+import { copy, downloadText } from "../lib/ui";
 import { calculate, describeNumbers, workingDays } from "../lib/math-tools";
 const props = defineProps<{ toolId: string }>();
 const expression = ref(""),
@@ -35,6 +36,12 @@ watch(
     result.value = "";
     error.value = "";
   },
+);
+const metrics = computed(() =>
+  result.value
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => line.split("：")),
 );
 function process() {
   result.value = "";
@@ -100,18 +107,37 @@ function example() {
       }}</span
       ><button class="text-button" @click="example">填入示例</button>
     </div>
+    <div class="action-row">
+      <button class="button primary" @click="process">
+        <Icon name="ArrowRight" :size="17" />计算
+      </button>
+    </div>
     <div v-if="toolId === 'statistics'" class="editor-grid">
       <EditorPanel
         v-model="input"
         title="输入数据"
         placeholder="输入数字，用空格、逗号或换行分隔"
         code
-      /><EditorPanel
-        :model-value="result"
-        title="计算结果"
-        readonly
-        filename="statistics.txt"
       />
+      <section class="result-metrics">
+        <article v-for="[label, value] in metrics" :key="label">
+          <span>{{ label }}</span
+          ><strong>{{ value }}</strong>
+        </article>
+        <p v-if="!result" class="muted">
+          输入数据后点击「计算」，查看各项统计指标。
+        </p>
+        <div v-else class="toolbar-actions">
+          <button class="button secondary" @click="copy(result)">
+            复制统计</button
+          ><button
+            class="button secondary"
+            @click="downloadText(result, 'statistics.txt')"
+          >
+            下载
+          </button>
+        </div>
+      </section>
     </div>
     <div v-else class="generator-grid">
       <div class="settings-panel">
@@ -131,6 +157,14 @@ function example() {
           <div class="calculator-keys">
             <button
               v-for="key in [
+                'sin(',
+                'cos(',
+                'tan(',
+                'sqrt(',
+                'ln(',
+                'log(',
+                'abs(',
+                '!',
                 '7',
                 '8',
                 '9',
@@ -163,8 +197,8 @@ function example() {
             >
               退格</button
             ><button class="button secondary" @click="expression = ''">
-              清空
-            </button>
+              清空</button
+            ><button class="button primary" @click="process">=</button>
           </div></template
         >
         <template v-else
@@ -216,18 +250,19 @@ function example() {
             /></label
         ></template>
       </div>
-      <EditorPanel
-        :model-value="result"
-        title="计算结果"
-        readonly
-        filename="calculation.txt"
-      />
+      <section class="calculation-output">
+        <h2>计算结果</h2>
+        <output>{{ result || "—" }}</output
+        ><button
+          class="button secondary"
+          :disabled="!result"
+          @click="copy(result)"
+        >
+          复制结果
+        </button>
+      </section>
     </div>
-    <div class="action-row">
-      <button class="button primary" @click="process">
-        <Icon name="ArrowRight" :size="17" />计算
-      </button>
-    </div>
+
     <p v-if="error" class="error-message" role="alert">{{ error }}</p>
     <div class="workspace-footnote">
       <Icon name="Info" :size="15" /><span>{{

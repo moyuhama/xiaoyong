@@ -95,6 +95,22 @@ function compare() {
         </button>
       </div>
     </div>
+    <div v-if="toolId === 'text-lines'" class="stats-row">
+      <div>
+        <strong>{{ stats.lines }}</strong
+        ><span>输入行数</span>
+      </div>
+      <div>
+        <strong>{{ output ? output.split("\n").length : 0 }}</strong
+        ><span>结果行数</span>
+      </div>
+      <div>
+        <strong>{{
+          Math.max(0, stats.lines - (output ? output.split("\n").length : 0))
+        }}</strong
+        ><span>移除行数</span>
+      </div>
+    </div>
     <div v-if="toolId === 'text-clean'" class="stats-row">
       <div>
         <strong>{{ stats.chars }}</strong
@@ -112,6 +128,11 @@ function compare() {
         <strong>{{ stats.lines }}</strong
         ><span>文本行数</span>
       </div>
+    </div>
+    <div v-if="toolId === 'text-diff'" class="action-row">
+      <button class="button primary" @click="compare">
+        <Icon name="GitCompareArrows" :size="17" />开始对比</button
+      ><span class="muted">绿色为新增，红色为删除</span>
     </div>
     <div class="editor-grid">
       <EditorPanel
@@ -133,12 +154,7 @@ function compare() {
         readonly
       />
     </div>
-    <template v-if="toolId === 'text-diff'"
-      ><div class="action-row">
-        <button class="button primary" @click="compare">
-          <Icon name="GitCompareArrows" :size="17" />开始对比</button
-        ><span class="muted">绿色为新增，红色为删除</span>
-      </div>
+    <template v-if="toolId === 'text-diff'">
       <section v-if="compared" class="result-box">
         <h3>
           对比结果
@@ -148,9 +164,20 @@ function compare() {
             >两段文本完全一致</span
           >
         </h3>
-        <pre
-          class="diff-output"
-        ><span v-for="(part, index) in diffs" :key="index" :class="{ added: part.added, removed: part.removed }">{{ part.value }}</span></pre>
+        <div class="diff-columns">
+          <section>
+            <h3>原始文本 · 红色为删除</h3>
+            <pre
+              class="diff-output"
+            ><template v-for="(part,index) in diffs" :key="index"><span v-if="!part.added" :class="{removed:part.removed}">{{part.value}}</span></template></pre>
+          </section>
+          <section>
+            <h3>修改后文本 · 绿色为新增</h3>
+            <pre
+              class="diff-output"
+            ><template v-for="(part,index) in diffs" :key="index"><span v-if="!part.removed" :class="{added:part.added}">{{part.value}}</span></template></pre>
+          </section>
+        </div>
       </section></template
     >
     <div v-else class="workspace-footnote">
