@@ -35,6 +35,33 @@ describe("文本和编码的实际输入边界", () => {
     expect(searchTools("压缩图片")[0]?.id).toBe("image-compress");
     expect(searchTools("JSON 校验")[0]?.id).toBe("json");
   });
+  it("区分完整 URL 与参数值，保留中文、空格和 emoji", () => {
+    const input = "https://example.com/你好?q=小用 😀&next=a+b#详情";
+    expect(encodeText(input, "uri", false)).toBe(
+      "https://example.com/%E4%BD%A0%E5%A5%BD?q=%E5%B0%8F%E7%94%A8%20%F0%9F%98%80&next=a+b#%E8%AF%A6%E6%83%85",
+    );
+    expect(encodeText(input, "url", false)).toBe(
+      "https%3A%2F%2Fexample.com%2F%E4%BD%A0%E5%A5%BD%3Fq%3D%E5%B0%8F%E7%94%A8%20%F0%9F%98%80%26next%3Da%2Bb%23%E8%AF%A6%E6%83%85",
+    );
+    for (const mode of ["uri", "url"]) {
+      expect(encodeText(encodeText(input, mode, false), mode, true)).toBe(
+        input,
+      );
+    }
+  });
+  it("解码时区分保留符，不把加号隐式改为空格", () => {
+    expect(encodeText("%3Fq%3Da%2Bb%26c%3D1", "uri", true)).toBe(
+      "%3Fq%3Da%2Bb%26c%3D1",
+    );
+    expect(encodeText("%3Fq%3Da%2Bb%26c%3D1", "url", true)).toBe("?q=a+b&c=1");
+    expect(encodeText("a+b%20c", "url", true)).toBe("a+b c");
+    for (const mode of ["uri", "url"]) {
+      for (const input of ["%", "%E0%A4%A", "%FF"]) {
+        expect(() => encodeText(input, mode, true)).toThrow();
+      }
+      expect(() => encodeText("\uD800", mode, false)).toThrow();
+    }
+  });
 });
 describe("颜色、时间和随机生成", () => {
   it("识别颜色并拒绝超出范围的 RGB", () => {

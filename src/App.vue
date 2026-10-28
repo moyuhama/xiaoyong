@@ -21,6 +21,9 @@ const DevTools = defineAsyncComponent(
 const JsonTool = defineAsyncComponent(
   () => import("./components/JsonTool.vue"),
 );
+const EncodingTool = defineAsyncComponent(
+  () => import("./components/EncodingTool.vue"),
+);
 const ImageTools = defineAsyncComponent(
   () => import("./components/ImageTools.vue"),
 );
@@ -117,10 +120,10 @@ const toolComponent = computed(() => {
   if (module) return extraModules[module];
   const id = currentTool.value?.id;
   if (id === "json") return JsonTool;
+  if (id === "encoding") return EncodingTool;
   if (id?.startsWith("image-")) return ImageTools;
   if (id?.startsWith("text-")) return TextTools;
-  if (["json", "encoding", "regex", "generator"].includes(id || ""))
-    return DevTools;
+  if (["regex", "generator"].includes(id || "")) return DevTools;
   return DailyTools;
 });
 const repositoryUrl = import.meta.env.VITE_REPOSITORY_URL || "";

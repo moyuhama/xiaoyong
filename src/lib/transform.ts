@@ -37,6 +37,7 @@ export function processLines(
   return lines.join("\n");
 }
 export function encodeText(value: string, mode: string, decode: boolean) {
+  if (mode === "uri") return decode ? decodeURI(value) : encodeURI(value);
   if (mode === "url")
     return decode ? decodeURIComponent(value) : encodeURIComponent(value);
   if (decode) {

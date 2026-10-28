@@ -449,11 +449,11 @@ export const tools: Tool[] = [
   {
     id: "encoding",
     name: "编码与解码",
-    description: "轻松转换 Base64 与 URL 编码。",
+    description: "Base64 编解码，对照完整 URL 与参数值的两种编码结果。",
     category: "dev",
     icon: "Binary",
     color: "blue",
-    keywords: "base64 url 编码 解码 转码 中文",
+    keywords: "base64 url encodeURI encodeURIComponent 编码 解码 转码 中文",
   },
   {
     id: "regex",

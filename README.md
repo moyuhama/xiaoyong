@@ -70,6 +70,8 @@ JSON 功能页提供格式化校验、压缩、转义、去除转义，以及 YA
 
 操作流程参考 [BeJSON 的 Base64 编解码](https://www.bejson.com/enc/base64/)（编码、解码、内容交换），以及 Tool.lu 的[正则测试](https://tool.lu/regex/)（常用表达式和匹配选项）、[二维码](https://tool.lu/qrcode/)（颜色和边距）、[图片压缩](https://tool.lu/tinyimage/)和 [PDF 合并](https://tool.lu/pdfmerger/)（文件排序与导出）。功能页样式集中于 `src/function-pages.css`，只作用于工具路由。
 
+编解码页采用上方输入、中间操作、下方结果的纵向布局，默认打开 URL 模式。参考 [BeJSON URL 编解码](https://www.bejson.com/enc/urlencode/)提供 `encodeURI` / `decodeURI` 与 `encodeURIComponent` / `decodeURIComponent` 两组结果，每组单独占满宽度。可选择结果复制、下载或放回输入进行反向转换；Base64 同样采用纵向布局。点击按钮执行，编辑输入后清除旧结果，最多 200,000 字符；URL 解码保留 `+`，不按表单规则替换为空格。
+
 前期调研参考 [IT-Tools](https://github.com/CorentinTh/it-tools) 与 [OmniTools](https://github.com/iib0011/omni-tools) 的工具分类。本轮参考 [懒人工具](https://www.lanren-tools.com/) 的图片与 PDF 目录，以及 Tool.lu 的[图片拼图](https://tool.lu/collage/)、[证件照排版](https://tool.lu/imageprint/)、[图片转 PDF](https://tool.lu/image2pdf/)、[SQL](https://tool.lu/sql/)、[ICO](https://tool.lu/favicon/)和[拼音](https://tool.lu/py5bconvert/)工具；通过 [67 工具的数字类页面公开索引](https://www.67tool.com/number/hex-to-binary)核对随机数、金额大写需求（其首页限制自动访问）。参考功能方向，按小用现有界面独立实现，不复制这些网站的页面、品牌或源码。
 
 ## GitHub Pages 部署
