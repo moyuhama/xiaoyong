@@ -59,7 +59,7 @@
 
 时间戳功能页按 [Tool.lu 时间戳页面](https://tool.lu/timestamp/)的操作结构整理：顶部集中显示当前数值并切换秒 / 毫秒；两组转换表单纵向排列，各自选择时区，结果可直接复制；保留批量转换、日期差与代码示例。
 
-JSON 功能页提供格式化校验、压缩、转义、去除转义，以及 YAML / TypeScript 转换。输入支持打开文件、语法高亮、撤销、重做与 JSON 修复；结果可切换树形 / 文本视图、展开折叠、搜索、复制和下载。编辑及树形查看采用 [JSONEditor](https://github.com/josdejong/jsoneditor)（Apache-2.0），其代码按需加载到 JSON 页面。
+JSON 功能页提供格式化校验、压缩、转义、去除转义，以及 YAML / TypeScript 转换。默认使用上下双框，上方输入、下方显示文本结果；顶部可切换为树结构，切换保留输入与结果。输入支持打开文件、语法高亮、撤销、重做与 JSON 修复；树结构支持展开折叠、搜索，结果可复制和下载。编辑及树形查看采用 [JSONEditor](https://github.com/josdejong/jsoneditor)（Apache-2.0），其代码按需加载到 JSON 页面。
 
 70 个功能页按工具类型调整操作区、输入区和结果区：
 

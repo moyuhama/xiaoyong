@@ -18,9 +18,12 @@ const source = ref(""),
 const indent = ref(2),
   realtime = ref(true),
   outerQuotes = ref(false);
-const resultMode = ref<"view" | "code">("view"),
+const resultMode = ref<"view" | "code">("code"),
   structured = ref(false),
   ready = ref(false);
+const treeView = computed(
+  () => resultMode.value === "view" && (!ready.value || structured.value),
+);
 const extra = ref("yaml"),
   filename = ref("formatted.json"),
   sourceName = ref("输入 JSON");
@@ -187,7 +190,7 @@ onMounted(() => {
     ?.querySelector("textarea")
     ?.setAttribute("aria-label", "输入 JSON");
   resultEditor = new JSONEditor(resultHost.value!, {
-    mode: "view",
+    mode: "code",
     language: "zh-CN",
     languages,
     mainMenuBar: true,
@@ -199,6 +202,7 @@ onMounted(() => {
       error.value = e.message;
     },
   });
+  syncResult();
 });
 onUnmounted(() => {
   disposed = true;
@@ -215,6 +219,30 @@ onUnmounted(() => {
     @keydown.ctrl.enter.prevent="run('format')"
     @keydown.meta.enter.prevent="run('format')"
   >
+    <div class="json-layout-toolbar">
+      <div class="segmented" role="group" aria-label="JSON 显示方式">
+        <button
+          :class="{ active: !treeView }"
+          :aria-pressed="!treeView"
+          @click="resultMode = 'code'"
+        >
+          上下双框
+        </button>
+        <button
+          :class="{ active: treeView }"
+          :aria-pressed="treeView"
+          :disabled="ready && !structured"
+          :title="
+            ready && !structured
+              ? '当前结果不适合树形展示，请切回 JSON 格式化'
+              : '展开层级、折叠和搜索字段'
+          "
+          @click="resultMode = 'view'"
+        >
+          树结构
+        </button>
+      </div>
+    </div>
     <div class="json-actions" aria-label="JSON 操作">
       <button class="button primary" @click="run('format')">格式化校验</button>
       <button class="button secondary" @click="run('minify')">压缩</button>
@@ -278,24 +306,7 @@ onUnmounted(() => {
       </section>
       <section class="json-column" aria-label="JSON 结果区">
         <div class="json-panel-head">
-          <div class="json-view-switch">
-            <button
-              :class="{
-                active: resultMode === 'view' && (!ready || structured),
-              }"
-              :disabled="ready && !structured"
-              @click="resultMode = 'view'"
-            >
-              树形结果</button
-            ><button
-              :class="{
-                active: resultMode === 'code' || (ready && !structured),
-              }"
-              @click="resultMode = 'code'"
-            >
-              文本结果
-            </button>
-          </div>
+          <strong>{{ treeView ? "树结构" : "处理结果" }}</strong>
           <div>
             <button :disabled="!ready" @click="copy(output)">
               <Icon name="Copy" :size="14" />复制</button
@@ -304,7 +315,7 @@ onUnmounted(() => {
             </button>
           </div>
         </div>
-        <div class="json-result-body">
+        <div class="json-result-body" :class="{ 'tree-mode': treeView }">
           <div
             ref="resultHost"
             class="json-editor-host"
@@ -312,12 +323,14 @@ onUnmounted(() => {
           ></div>
           <div v-if="!ready" class="json-placeholder">
             <Icon name="Braces" :size="30" /><strong>{{
-              error ? "请先修正 JSON 内容" : "在左侧输入 JSON"
+              error ? "请先修正 JSON 内容" : "在上方输入 JSON"
             }}</strong
             ><span>{{
               error
                 ? "错误详情显示在操作栏下方"
-                : "支持展开层级、搜索字段和切换文本结果"
+                : treeView
+                  ? "格式化后可展开层级、折叠和搜索字段"
+                  : "格式化后的文本会显示在下方，可复制或下载"
             }}</span
             ><button v-if="!error" class="text-button" @click="example">
               载入示例查看效果
@@ -339,6 +352,12 @@ onUnmounted(() => {
 .json-tool {
   overflow: hidden;
   border-radius: 10px;
+}
+.json-layout-toolbar {
+  display: flex;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--soft-bg);
 }
 .json-actions {
   display: flex;
@@ -397,13 +416,13 @@ onUnmounted(() => {
 }
 .json-columns {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 .json-column {
   min-width: 0;
 }
 .json-column + .json-column {
-  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
 }
 .json-panel-head {
   display: flex;
@@ -446,16 +465,12 @@ onUnmounted(() => {
   opacity: 0.4;
   cursor: default;
 }
-.json-view-switch button {
-  color: var(--subtle);
-}
-.json-view-switch button.active {
-  color: var(--primary);
-  font-weight: 600;
-}
 .json-editor-host {
-  height: 520px;
+  height: 280px;
   min-width: 0;
+}
+.tree-mode .json-editor-host {
+  height: 440px;
 }
 .json-editor-host :deep(div.jsoneditor) {
   border: 0;
@@ -582,14 +597,10 @@ onUnmounted(() => {
   overflow-wrap: anywhere;
 }
 @media (max-width: 900px) {
-  .json-columns {
-    grid-template-columns: 1fr;
-  }
-  .json-column + .json-column {
-    border-left: 0;
-    border-top: 1px solid var(--border);
-  }
   .json-editor-host {
+    height: 260px;
+  }
+  .tree-mode .json-editor-host {
     height: 360px;
   }
   .json-options {
