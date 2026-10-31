@@ -134,6 +134,7 @@ function navigate(path: string) {
 }
 function handleRoute() {
   route.value = location.hash.slice(1) || "/";
+  mobileOpen.value = false;
   window.scrollTo({ top: 0 });
 }
 function toggleTheme() {
@@ -189,15 +190,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <a class="skip-link" href="#main-content" @click.prevent="focusMain"
+  <a
+    class="skip-link"
+    :class="{ 'tool-skip-link': isToolRoute }"
+    href="#main-content"
+    @click.prevent="focusMain"
     >跳到主要内容</a
   >
   <div
-    v-if="mobileOpen"
+    v-if="!isToolRoute && mobileOpen"
     class="sidebar-scrim"
     @click="mobileOpen = false"
   ></div>
   <aside
+    v-if="!isToolRoute"
     class="sidebar"
     :inert="isMobile && !mobileOpen"
     :class="{ 'is-open': mobileOpen }"
@@ -240,10 +246,11 @@ onUnmounted(() => {
     </div>
   </aside>
 
-  <div class="main-shell">
+  <div class="main-shell" :class="{ 'tool-shell': isToolRoute }">
     <header class="topbar">
       <div class="breadcrumb">
         <button
+          v-if="!isToolRoute"
           class="icon-button mobile-menu"
           aria-label="打开菜单"
           @click="mobileOpen = true"
@@ -442,26 +449,6 @@ onUnmounted(() => {
           ></Suspense
         >
         <p class="tool-note">离开工具页面后，输入内容将被清空。</p>
-        <section class="related-section">
-          <h2>也许你还用得上</h2>
-          <div class="related-tools">
-            <a
-              v-for="tool in tools
-                .filter(
-                  (t) =>
-                    t.id !== currentTool?.id &&
-                    t.category === currentTool?.category,
-                )
-                .slice(0, 3)"
-              :key="tool.id"
-              :href="'#/tool/' + tool.id"
-              ><span class="mini-tool-icon" :class="tool.color"
-                ><Icon :name="tool.icon" :size="18" /></span
-              ><span>{{ tool.name }}</span
-              ><Icon name="ArrowUpRight" :size="16"
-            /></a>
-          </div>
-        </section>
       </template>
       <div v-else class="empty-state">
         <h1>这个工具暂时不存在</h1>
@@ -479,7 +466,12 @@ onUnmounted(() => {
     </footer>
   </div>
   <Transition name="toast"
-    ><div v-if="toast" role="status" class="toast-message">
+    ><div
+      v-if="toast"
+      role="status"
+      class="toast-message"
+      :class="{ 'tool-toast': isToolRoute }"
+    >
       <Icon name="Check" :size="17" />{{ toast }}
     </div></Transition
   >

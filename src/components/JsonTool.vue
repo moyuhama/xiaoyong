@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import JSONEditor from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
 import Icon from "./Icon.vue";
+import EditorResizeHandle from "./EditorResizeHandle.vue";
 import { processJson, type JsonAction } from "../lib/json-tools";
 import { convertYaml } from "../lib/config-tools";
 import { jsonTypes } from "../lib/popular-text";
@@ -299,6 +300,11 @@ onUnmounted(() => {
           @change="importFile"
         />
         <div ref="sourceHost" class="json-editor-host"></div>
+        <EditorResizeHandle
+          :target="sourceHost"
+          label="JSON 输入区"
+          @resize="inputEditor?.aceEditor?.resize()"
+        />
         <div class="json-panel-foot">
           <span>{{ chars }} 字符</span
           ><button :disabled="!source" @click="copy(source)">复制输入</button>
@@ -337,6 +343,11 @@ onUnmounted(() => {
             </button>
           </div>
         </div>
+        <EditorResizeHandle
+          :target="resultHost"
+          label="JSON 结果区"
+          @resize="resultEditor?.aceEditor?.resize()"
+        />
         <div class="json-panel-foot">
           <span role="status">{{ status || "等待输入" }}</span
           ><button :disabled="!ready" @click="setSource(output)">
@@ -468,6 +479,8 @@ onUnmounted(() => {
 .json-editor-host {
   height: 280px;
   min-width: 0;
+  min-height: 120px;
+  overflow: hidden;
 }
 .tree-mode .json-editor-host {
   height: 440px;

@@ -19,6 +19,7 @@ import { xml } from "@codemirror/lang-xml";
 import { yaml } from "@codemirror/lang-yaml";
 import { markdown } from "@codemirror/lang-markdown";
 import { copy, downloadText, notify } from "../lib/ui";
+import EditorResizeHandle from "./EditorResizeHandle.vue";
 const props = withDefaults(
   defineProps<{
     title: string;
@@ -289,6 +290,12 @@ onUnmounted(() => {
       @change="openFile"
     />
     <div ref="host" class="code-editor-host"></div>
+    <EditorResizeHandle
+      v-if="!expanded"
+      :target="host"
+      :label="title"
+      @resize="view?.requestMeasure()"
+    />
     <div class="editor-footer">
       <span>{{ count || `${characters} 字符 · ${lineCount} 行` }}</span
       ><span>Ctrl / ⌘ + F 查找{{ expanded ? " · Esc 收起" : "" }}</span>
@@ -353,7 +360,7 @@ onUnmounted(() => {
   height: 380px;
   min-height: 180px;
   overflow: hidden;
-  resize: vertical;
+  flex-shrink: 0;
 }
 .editor-footer {
   padding: 9px 14px;

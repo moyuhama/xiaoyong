@@ -276,6 +276,12 @@ textarea {
   display: flex;
   flex-direction: column;
 }
+.main-shell.tool-shell {
+  margin-left: 0;
+}
+.skip-link.tool-skip-link {
+  left: 24px;
+}
 .topbar {
   height: 72px;
   display: flex;
@@ -1765,6 +1771,9 @@ input[type="date"],
   transition:
     opacity 0.2s,
     margin 0.2s;
+}
+.toast-message.tool-toast {
+  left: 50%;
 }
 .toast-enter-from,
 .toast-leave-to {
